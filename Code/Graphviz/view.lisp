@@ -2,8 +2,6 @@
 
 (defparameter *graphviz-viewer* "evince")
 
-(defparameter *default-graph* (make-instance 'cleavir-graph))
-
 (defclass arbitrary-cleavir-graph
     (ast
      cst
@@ -15,7 +13,9 @@
 (defun view (&rest graph-roots)
   (uiop:with-temporary-file (:pathname output-file)
     (cl-dot:dot-graph
-     (cl-dot:generate-graph-from-roots *default-graph* graph-roots)
+     (cl-dot:generate-graph-from-roots
+      (make-instance 'arbitrary-cleavir-graph)
+      graph-roots)
      output-file)
     (uiop:run-program
      (list *graphviz-viewer*
