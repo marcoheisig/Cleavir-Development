@@ -4,6 +4,14 @@
 
 (defparameter *default-graph* (make-instance 'cleavir-graph))
 
+(defclass arbitrary-cleavir-graph
+    (ast
+     cst
+     hir-flowchart
+     mir-flowchart
+     lir-flowchart)
+  ())
+
 (defun view (&rest graph-roots)
   (uiop:with-temporary-file (:pathname output-file)
     (cl-dot:dot-graph
