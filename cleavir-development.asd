@@ -3,8 +3,9 @@
   :author "Marco Heisig <marco.heisig@fau.de>"
   :license "BSD"
   :depends-on ("uiop"
+               "alexandria"
                "cl-dot"
-               "eclector"
+               "eclector-concrete-syntax-tree"
                "concrete-syntax-tree"
                "cleavir-ast"
                "cleavir-io"
@@ -13,7 +14,14 @@
   ((:module "Code"
     :serial t
     :components ((:file "package")
-                 (:module "Graph-Drawing"
-                  :components ((:file "draw")
-                               (:file "cst")
-                               (:file "ast")))))))
+                 (:module "Graphviz"
+                  :components ((:file "generic-functions")
+                               (:file "graph")
+                               (:file "cst-graph")
+                               (:file "ast-graph")
+                               (:file "instruction-graph")
+                               (:file "hir-graph")
+                               (:file "mir-graph")
+                               (:file "lir-graph")
+                               (:file "cleavir-graph")
+                               (:file "view")))))))
