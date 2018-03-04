@@ -16,9 +16,9 @@
 
 (defmethod graphviz-outgoing-edges append
     ((graph ast) (ast cleavir-ast:ast))
-  (loop for child in (cleavir-ast:children ast)
-        collect
-        (make-edge graph 'ast-edge ast child)))
+  (flet ((make-ast-edge (child)
+           (make-edge graph 'ast-edge ast child)))
+    (mapcar #'make-ast-edge (cleavir-ast:children ast))))
 
 ;;; The default label is the lower-case version of the name of the class
 ;;; (as a string) with suffix -ast stripped off.
@@ -37,7 +37,7 @@
 (defmethod graphviz-node-fillcolor
     ((graph ast) (ast cleavir-ast:constant-ast))
   (declare (ignore graph ast))
-  "green")
+  :green)
 
 ;;; LEXICAL-AST Attributes
 
@@ -49,7 +49,7 @@
 (defmethod graphviz-node-fillcolor
     ((graph ast) (ast cleavir-ast:lexical-ast))
   (declare (ignore graph ast))
-  "yellow")
+  :yellow)
 
 ;;; TAG-AST Attributes
 
@@ -72,7 +72,7 @@
 (defmethod graphviz-node-label
     ((graph ast) (ast cleavir-ast:load-time-value-ast))
   (declare (ignore graph))
-  (format nil "\"~a\"" (cleavir-ast:form ast)))
+  (format nil "~a" (cleavir-ast:form ast)))
 
 (defmethod graphviz-node-fillcolor
     ((graph ast) (ast cleavir-ast:load-time-value-ast))

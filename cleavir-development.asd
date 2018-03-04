@@ -27,6 +27,6 @@
                                (:file "hir-flowchart")
                                (:file "mir-flowchart")
                                (:file "lir-flowchart")
-                               (:file "view")))
-                 (:module "Examples"
-                  :components ((:file "view")))))))
+                               (:file "view")))))
+   (:module "Examples"
+    :components ((:file "view")))))
