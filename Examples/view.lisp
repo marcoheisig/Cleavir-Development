@@ -11,10 +11,17 @@
     :optimize nil
     :policy nil))
 
+(defmethod cleavir-env:declarations
+    ((environment cleavir-bogus-test-environment:bogus-environment))
+  '())
+
 (defun view-ast ()
   (view
    (cleavir-generate-ast:generate-ast
-    '(+ 2 3)
+    `(progn
+       (let ((a (make-array 5))
+             (x 3))
+         (incf (aref a x) 2)))
     (make-instance 'cleavir-bogus-test-environment:bogus-environment)
     nil)))
 

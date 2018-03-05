@@ -44,8 +44,7 @@
 (defmethod graphviz-node-label
     ((graph cst) (atom-cst concrete-syntax-tree:atom-cst))
   (declare (ignore graph))
-  (with-output-to-string (stream)
-    (print-object (cst:raw atom-cst) stream)))
+  (cst:raw atom-cst))
 
 (defmethod graphviz-edge-label
     ((graph cst) (edge cst-first-edge) from to)

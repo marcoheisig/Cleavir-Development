@@ -13,8 +13,7 @@
                "cleavir-cst-to-ast"
                "cleavir-ast-to-hir"
                "cleavir-generate-ast"
-               "cleavir-generate-ast-test"
-               )
+               "cleavir-generate-ast-test")
   :components
   ((:module "Code"
     :serial t

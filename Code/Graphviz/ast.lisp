@@ -63,7 +63,7 @@
 (defmethod graphviz-node-label
     ((graph ast) (ast cleavir-ast:top-level-function-ast))
   (declare (ignore graph))
-  (format nil "\"~a ~a\""
+  (format nil "~a ~a"
           (string-downcase (class-name (class-of ast)))
           (cleavir-ast:forms ast)))
 
@@ -90,13 +90,49 @@
 
 (defmethod graphviz-node-label
     ((graph ast) (ast cleavir-ast:the-ast))
-  (format nil "\"the (values ~{~s ~}~@[&optional ~{~s ~}~]&rest ~s)\""
-          (cleavir-ast:required-types ast)
-          (cleavir-ast:optional-types ast)
-          (cleavir-ast:rest-type ast)))
+  (let ((required (cleavir-ast:required-types ast))
+        (optional (cleavir-ast:optional-types ast))
+        (rest (cleavir-ast:rest-type ast)))
+    `(the (values
+           ,@required
+           ,@(unless (null optional)
+               `(&optional ,@optional))
+           &reset ,rest))))
 
 ;;; AREF-AST Attributes
 
+(defmethod graphviz-node-label
+    ((graph ast) (ast cleavir-ast:aref-ast))
+  (declare (ignore graph))
+  (format nil "~:[hairy~;simple~] aref ~s"
+          (cleavir-ast:simple-p ast)
+          (cleavir-ast:element-type ast)))
+
 ;;; ASET-AST Attributes
 
+(defmethod graphviz-node-label
+    ((graph ast) (ast cleavir-ast:aref-ast))
+  (declare (ignore graph))
+  (format nil "~:[hairy~;simple~] aset ~s"
+          (cleavir-ast:simple-p ast)
+          (cleavir-ast:element-type ast)))
+
 ;;; FLOAT-AST Attributes
+
+(macrolet ((deflabel (class label)
+             `(defmethod graphviz-node-label
+                  ((graph ast) (ast ,class))
+                (declare (ignorable graph ast))
+                ,label)))
+  (deflabel float-add-ast "float +")
+  (deflabel float-sub-ast "float -")
+  (deflabel float-mul-ast "float *")
+  (deflabel float-div-ast "float /")
+  (deflabel float-less-ast "float <")
+  (deflabel float-not-greater-ast "float <=")
+  (deflabel float-equal-ast "float =")
+  (deflabel float-not-less-ast "float >=")
+  (deflabel float-greater-ast "float >")
+  (deflabel float-sin-ast "float sin")
+  (deflabel float-cos-ast "float cos")
+  (deflabel float-sqrt-ast "float sqrt"))
