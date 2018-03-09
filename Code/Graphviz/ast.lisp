@@ -90,14 +90,10 @@
 
 (defmethod graphviz-node-label
     ((graph ast) (ast cleavir-ast:the-ast))
-  (let ((required (cleavir-ast:required-types ast))
-        (optional (cleavir-ast:optional-types ast))
-        (rest (cleavir-ast:rest-type ast)))
-    `(the (values
-           ,@required
-           ,@(unless (null optional)
-               `(&optional ,@optional))
-           &reset ,rest))))
+  (format nil "the (values ~{~s ~}~@[&optional ~{~s ~}~]&rest ~s)"
+          (cleavir-ast:required-types ast)
+          (cleavir-ast:optional-types ast)
+          (cleavir-ast:rest-type ast)))
 
 ;;; AREF-AST Attributes
 

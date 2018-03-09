@@ -5,6 +5,10 @@
   :depends-on ("uiop"
                "alexandria"
                "cl-dot"
+               "sicl-boot"
+               "sicl-simple-environment"
+               "sicl-environment"
+               ;"sicl-extrinsic-hir-compiler"
                "eclector-concrete-syntax-tree"
                "concrete-syntax-tree"
                "cleavir-ast"
@@ -18,6 +22,10 @@
   ((:module "Code"
     :serial t
     :components ((:file "package")
+                 (:module "Conversion"
+                  :components ((:file "convert")
+                               (:file "cleavir")
+                               (:file "sicl")))
                  (:module "Graphviz"
                   :components ((:file "protocol")
                                (:file "cst")
@@ -26,6 +34,6 @@
                                (:file "hir-flowchart")
                                (:file "mir-flowchart")
                                (:file "lir-flowchart")
-                               (:file "view")))))
+                               (:file "visualization")))))
    (:module "Examples"
     :components ((:file "view")))))

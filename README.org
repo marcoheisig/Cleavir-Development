@@ -5,3 +5,4 @@ contains utilities that are useful for working with Cleavir.
 
 List of features:
 - Graphviz visualization of Cleavir data structures.
+- utility functions to convert different internal representations
