@@ -7,18 +7,18 @@
 (defclass ast (graph)
   ())
 
-(defclass ast-edge (edge)
-  ())
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Methods
 
 (defmethod graphviz-outgoing-edges append
     ((graph ast) (ast cleavir-ast:ast))
-  (flet ((make-ast-edge (child)
-           (make-edge graph 'ast-edge ast child)))
-    (mapcar #'make-ast-edge (cleavir-ast:children ast))))
+  (loop for child in (cleavir-ast:children ast)
+        for child-number from 1
+        collect
+        (make-instance 'edge
+          :object child
+          :label (princ-to-string child-number))))
 
 ;;; The default caption is the lower-case version of the name of the class
 ;;; (as a string) with suffix -ast stripped off.

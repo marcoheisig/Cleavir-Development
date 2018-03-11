@@ -7,15 +7,6 @@
 (defclass flowchart (graph)
   ())
 
-(defclass flowchart-edge (edge)
-  ())
-
-(defclass control-arc (flowchart-edge)
-  ())
-
-(defclass data-arc (flowchart-edge)
-  ())
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Methods
@@ -23,9 +14,12 @@
 (defmethod graphviz-outgoing-edges append
     ((graph flowchart) (instruction cleavir-ir:instruction))
   (flet ((make-control-arc (successor)
-           (make-edge graph 'control-arc instruction successor))
+           (make-instance 'edge
+             :object successor))
          (make-data-arc (output)
-           (make-edge graph 'data-arc instruction output)))
+           (make-instance 'edge
+             :object output
+             :style :dashed)))
     (append
      (mapcar #'make-control-arc (cleavir-ir:successors instruction))
      (mapcar #'make-data-arc (cleavir-ir:outputs instruction)))))

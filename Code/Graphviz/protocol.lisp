@@ -15,14 +15,6 @@
 
 (defgeneric graphviz-node-style (graph node))
 
-(defgeneric graphviz-edge-label (graph edge from to))
-
-(defgeneric graphviz-edge-weight (graph edge from to))
-
-(defgeneric graphviz-edge-style (graph edge from to))
-
-(defgeneric make-edge (graph edge from to))
-
 (defgeneric graphviz-outgoing-edges (graph object)
   (:method-combination append))
 
@@ -39,7 +31,7 @@
 (defclass graph ()
   ())
 
-(defclass edge ()
+(defclass edge (cl-dot:attributed)
   ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -83,21 +75,6 @@
 ;;;
 ;;; Default Methods on Edges
 
-(defmethod graphviz-edge-label ((graph graph) (edge edge) from to)
-  (declare (ignore graph edge from to))
-  "")
-
-(defmethod graphviz-edge-weight ((graph graph) (edge edge) from to)
-  (declare (ignore graph edge from to))
-  1)
-
-(defmethod graphviz-edge-style ((graph graph) (edge edge) from to)
-  (declare (ignore graph edge from to))
-  :solid)
-
-(defmethod make-edge ((graph graph) (edge symbol) from to)
-  (make-edge graph (make-instance edge) from to))
-
 (defmethod cl-dot:graph-object-points-to
     ((graph graph) (object t))
   (graphviz-outgoing-edges graph object))
@@ -125,10 +102,11 @@
   (declare (ignore graph object))
   '())
 
-(defmethod make-edge ((graph graph) (edge edge) from to)
-  (make-instance 'cl-dot:attributed
-    :object to
-    :attributes
-    `(:label ,(graphviz-edge-label graph edge from to)
-      :style ,(graphviz-edge-style graph edge from to)
-      :weight ,(graphviz-edge-weight graph edge from to))))
+(defmethod initialize-instance
+    ((instance edge) &rest initargs
+     &key (label "") (style :solid) (weight 1))
+  (apply #'call-next-method instance
+         :attributes `(:label ,label
+                       :style ,style
+                       :weight ,weight)
+         initargs))
