@@ -4,7 +4,10 @@
 ;;;
 ;;; Generic Functions
 
-(defgeneric graphviz-node-label (graph node))
+(defgeneric graphviz-node-caption (graph node))
+
+(defgeneric graphviz-node-properties (graph node)
+  (:method-combination append))
 
 (defgeneric graphviz-node-fillcolor (graph node))
 
@@ -43,11 +46,15 @@
 ;;;
 ;;; Default Methods on Nodes
 
-(defmethod graphviz-node-label ((graph graph) (node t))
+(defmethod graphviz-node-caption ((graph graph) (node t))
   (declare (ignore graph))
   (string-downcase
    (class-name
     (class-of node))))
+
+(defmethod graphviz-node-properties append ((graph graph) (node t))
+  (declare (ignore graph node))
+  '())
 
 (defmethod graphviz-node-fillcolor ((graph graph) (node t))
   (declare (ignore graph node))
@@ -65,7 +72,9 @@
     ((graph graph) (node t))
   (make-instance 'cl-dot:node
     :attributes
-    `(:label ,(graphviz-node-label graph node)
+    `(:label ,(make-html-label
+               :caption (graphviz-node-caption graph node)
+               :properties (graphviz-node-properties graph node))
       :fillcolor ,(graphviz-node-fillcolor graph node)
       :shape ,(graphviz-node-shape graph node)
       :style ,(graphviz-node-style graph node))))

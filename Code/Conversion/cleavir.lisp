@@ -43,7 +43,33 @@
      (cst concrete-syntax-tree:cst)
      (type (eql 'ast)))
   (declare (ignore type))
-  (let ((environment (compilation-environment context)))
+  (let ((environment (compilation-environment context))
+        (cleavir-generate-ast:*compiler* (mode context)))
     (cleavir-cst-to-ast:cst-to-ast cst environment nil)))
 
 ;;; HIR conversion
+
+(defmethod convert
+    ((context cleavir)
+     (ast cleavir-ast:ast)
+     (type (eql 'hir)))
+  (declare (ignore type))
+  (cleavir-ast-to-hir:compile-toplevel ast))
+
+;;; MIR conversion
+
+(defmethod convert
+    ((context cleavir)
+     (ast cleavir-ast:ast)
+     (type (eql 'mir)))
+  (declare (ignore context ast type))
+  (error "Not implemented"))
+
+;;; LIR conversion
+
+(defmethod convert
+    ((context cleavir)
+     (ast cleavir-ast:ast)
+     (type (eql 'lir)))
+  (declare (ignore context ast type))
+  (error "Not implemented"))

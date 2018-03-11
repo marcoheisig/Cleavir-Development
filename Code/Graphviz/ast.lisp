@@ -20,19 +20,26 @@
            (make-edge graph 'ast-edge ast child)))
     (mapcar #'make-ast-edge (cleavir-ast:children ast))))
 
-;;; The default label is the lower-case version of the name of the class
+;;; The default caption is the lower-case version of the name of the class
 ;;; (as a string) with suffix -ast stripped off.
-(defmethod graphviz-node-label
+(defmethod graphviz-node-caption
     ((graph ast) (ast cleavir-ast:ast))
+  (declare (ignore graph))
   (let ((name (string (class-name (class-of ast)))))
     (string-downcase (subseq name 0 (- (length name) 4)))))
 
+(defmethod graphviz-node-properties append
+    ((graph ast) (ast cleavir-ast:ast))
+  (declare (ignore graph))
+  `(("source" . ,(princ-to-string (cleavir-ast:origin ast)))
+    ("policy" . ,(princ-to-string (cleavir-ast:policy ast)))))
+
 ;;; CONSTANT-AST Attributes
 
-(defmethod graphviz-node-label
+(defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:constant-ast))
   (declare (ignore graph))
-  (cleavir-ast:value ast))
+  `(("value" . ,(princ-to-string (cleavir-ast:value ast)))))
 
 (defmethod graphviz-node-fillcolor
     ((graph ast) (ast cleavir-ast:constant-ast))
@@ -41,10 +48,10 @@
 
 ;;; LEXICAL-AST Attributes
 
-(defmethod graphviz-node-label
+(defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:lexical-ast))
   (declare (ignore graph))
-  (cleavir-ast:name ast))
+  `(("name" . ,(princ-to-string (cleavir-ast:name ast)))))
 
 (defmethod graphviz-node-fillcolor
     ((graph ast) (ast cleavir-ast:lexical-ast))
@@ -53,26 +60,24 @@
 
 ;;; TAG-AST Attributes
 
-(defmethod graphviz-node-label
+(defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:tag-ast))
   (declare (ignore graph))
-  (cleavir-ast:name ast))
+  `(("name" . ,(princ-to-string (cleavir-ast:name ast)))))
 
 ;;; TOP-LEVEL-FUNCTION-AST Attributes
 
-(defmethod graphviz-node-label
+(defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:top-level-function-ast))
   (declare (ignore graph))
-  (format nil "~a ~a"
-          (string-downcase (class-name (class-of ast)))
-          (cleavir-ast:forms ast)))
+  `(("forms" . ,(princ-to-string (cleavir-ast:forms ast)))))
 
 ;;; LOAD-TIME-VALUE-AST Attributes
 
-(defmethod graphviz-node-label
+(defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:load-time-value-ast))
   (declare (ignore graph))
-  (format nil "~a" (cleavir-ast:form ast)))
+  `(("form" . ,(princ-to-string (cleavir-ast:form ast)))))
 
 (defmethod graphviz-node-fillcolor
     ((graph ast) (ast cleavir-ast:load-time-value-ast))
@@ -88,47 +93,28 @@
 
 ;;; THE-AST Attributes
 
-(defmethod graphviz-node-label
+(defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:the-ast))
-  (format nil "the (values ~{~s ~}~@[&optional ~{~s ~}~]&rest ~s)"
-          (cleavir-ast:required-types ast)
-          (cleavir-ast:optional-types ast)
-          (cleavir-ast:rest-type ast)))
-
-;;; AREF-AST Attributes
-
-(defmethod graphviz-node-label
-    ((graph ast) (ast cleavir-ast:aref-ast))
-  (declare (ignore graph))
-  (format nil "~:[hairy~;simple~] aref ~s"
-          (cleavir-ast:simple-p ast)
-          (cleavir-ast:element-type ast)))
-
-;;; ASET-AST Attributes
-
-(defmethod graphviz-node-label
-    ((graph ast) (ast cleavir-ast:aref-ast))
-  (declare (ignore graph))
-  (format nil "~:[hairy~;simple~] aset ~s"
-          (cleavir-ast:simple-p ast)
-          (cleavir-ast:element-type ast)))
+  `(("required-types" . ,(princ-to-string (cleavir-ast:required-types ast)))
+    ("optional-types" . ,(princ-to-string (cleavir-ast:optional-types ast)))
+    ("rest-type" . ,(princ-to-string (cleavir-ast:rest-type ast)))))
 
 ;;; FLOAT-AST Attributes
 
-(macrolet ((deflabel (class label)
-             `(defmethod graphviz-node-label
+(macrolet ((defcaption (class caption)
+             `(defmethod graphviz-node-caption
                   ((graph ast) (ast ,class))
                 (declare (ignorable graph ast))
-                ,label)))
-  (deflabel cleavir-ast:float-add-ast "float +")
-  (deflabel cleavir-ast:float-sub-ast "float -")
-  (deflabel cleavir-ast:float-mul-ast "float *")
-  (deflabel cleavir-ast:float-div-ast "float /")
-  (deflabel cleavir-ast:float-less-ast "float <")
-  (deflabel cleavir-ast:float-not-greater-ast "float <=")
-  (deflabel cleavir-ast:float-equal-ast "float =")
-  (deflabel cleavir-ast:float-not-less-ast "float >=")
-  (deflabel cleavir-ast:float-greater-ast "float >")
-  (deflabel cleavir-ast:float-sin-ast "float sin")
-  (deflabel cleavir-ast:float-cos-ast "float cos")
-  (deflabel cleavir-ast:float-sqrt-ast "float sqrt"))
+                ,caption)))
+  (defcaption cleavir-ast:float-add-ast "float +")
+  (defcaption cleavir-ast:float-sub-ast "float -")
+  (defcaption cleavir-ast:float-mul-ast "float *")
+  (defcaption cleavir-ast:float-div-ast "float /")
+  (defcaption cleavir-ast:float-less-ast "float <")
+  (defcaption cleavir-ast:float-not-greater-ast "float <=")
+  (defcaption cleavir-ast:float-equal-ast "float =")
+  (defcaption cleavir-ast:float-not-less-ast "float >=")
+  (defcaption cleavir-ast:float-greater-ast "float >")
+  (defcaption cleavir-ast:float-sin-ast "float sin")
+  (defcaption cleavir-ast:float-cos-ast "float cos")
+  (defcaption cleavir-ast:float-sqrt-ast "float sqrt"))

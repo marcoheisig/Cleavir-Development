@@ -31,30 +31,28 @@
    (make-edge graph 'cst-first-edge cons-cst (cst:first cons-cst))
    (make-edge graph 'cst-rest-edge cons-cst (cst:rest cons-cst))))
 
-(defmethod graphviz-node-label
-    ((graph cst) (cons-cst cst:cons-cst))
-  (declare (ignore graph))
-  (html-table
-   :caption "cons"
-   :rows (list
-          (html-key-value-row
-           "source"
-           (princ-to-string (cst:source cons-cst))))))
+(defmethod graphviz-node-caption
+    ((graph cst) (node cst:cons-cst))
+  (declare (ignore graph node))
+  "cons")
+
+(defmethod graphviz-node-caption
+    ((graph cst) (node cst:atom-cst))
+  (declare (ignore graph node))
+  "atom")
+
+(defmethod graphviz-node-properties append
+    ((graph cst) (cst cst:cst))
+  `(("source" . ,(princ-to-string (cst:source cst)))))
+
+(defmethod graphviz-node-properties append
+    ((graph cst) (cst cst:atom-cst))
+  `(("value" . ,(princ-to-string (cst:raw cst)))))
 
 (defmethod graphviz-node-fillcolor
     ((graph cst) (cons-cst concrete-syntax-tree:cons-cst))
   (declare (ignore graph cons-cst))
   :gray)
-
-(defmethod graphviz-node-label
-    ((graph cst) (atom-cst concrete-syntax-tree:atom-cst))
-  (declare (ignore graph))
-  (html-table
-   :caption (princ-to-string (cst:raw atom-cst))
-   :rows (list
-          (html-key-value-row
-           "source"
-           (princ-to-string (cst:source atom-cst))))))
 
 (defmethod graphviz-edge-label
     ((graph cst) (edge cst-first-edge) from to)
