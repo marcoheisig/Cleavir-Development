@@ -14,36 +14,36 @@
 ;;; CST conversion
 
 (defmethod convert
-    ((compiler cleavir)
+    ((context cleavir)
      (form t)
      (type (eql 'cst)))
-  (declare (ignore compiler type))
+  (declare (ignore context type))
   (concrete-syntax-tree:cst-from-expression form))
 
 (defmethod convert
-    ((compiler cleavir)
+    ((context cleavir)
      (pathname pathname)
      (type (eql 'cst)))
-  (declare (ignore compiler type))
+  (declare (ignore context type))
   (with-open-file (stream pathname :direction :input)
     (eclector.concrete-syntax-tree:cst-read stream)))
 
 (defmethod convert
-    ((compiler cleavir)
+    ((context cleavir)
      (string string)
      (type (eql 'cst)))
-  (declare (ignore compiler type))
+  (declare (ignore context type))
   (with-input-from-string (stream string)
     (eclector.concrete-syntax-tree:cst-read stream)))
 
 ;;; AST conversion
 
 (defmethod convert
-    ((compiler cleavir)
+    ((context cleavir)
      (cst concrete-syntax-tree:cst)
      (type (eql 'ast)))
   (declare (ignore type))
-  (let ((environment (compilation-environment compiler)))
+  (let ((environment (compilation-environment context)))
     (cleavir-cst-to-ast:cst-to-ast cst environment nil)))
 
 ;;; HIR conversion

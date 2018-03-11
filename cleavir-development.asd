@@ -8,7 +8,7 @@
                "sicl-boot"
                "sicl-simple-environment"
                "sicl-environment"
-               ;"sicl-extrinsic-hir-compiler"
+               "sicl-extrinsic-environment"
                "eclector-concrete-syntax-tree"
                "concrete-syntax-tree"
                "cleavir-ast"
@@ -22,18 +22,20 @@
   ((:module "Code"
     :serial t
     :components ((:file "package")
-                 (:module "Conversion"
-                  :components ((:file "convert")
-                               (:file "cleavir")
-                               (:file "sicl")))
                  (:module "Graphviz"
                   :components ((:file "protocol")
+                               (:file "html-labels")
                                (:file "cst")
                                (:file "ast")
                                (:file "flowchart")
                                (:file "hir-flowchart")
                                (:file "mir-flowchart")
                                (:file "lir-flowchart")
-                               (:file "visualization")))))
+                               (:file "visualization")))
+                 (:module "Conversion"
+                  :components ((:file "convert")
+                               (:file "cleavir")
+                               (:file "sicl")
+                               (:file "convert-and-view")))))
    (:module "Examples"
     :components ((:file "view")))))
