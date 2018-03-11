@@ -1,5 +1,7 @@
 (cl:in-package #:cleavir-development)
 
+(defvar *context* (make-instance 'cleavir))
+
 (defun view-cst (object &rest arguments)
   (apply #'view (convert *context* object 'cst) arguments))
 

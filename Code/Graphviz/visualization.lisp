@@ -21,8 +21,6 @@
              (zerop exit-code))))
     (find-if #'program-in-path-p '("evince" "okular" "xpdf"))))
 
-(defvar *context* (make-instance 'sicl))
-
 (defun draw (graph-root file &key
                                (format :pdf)
                                (graph *graphviz-default-graph*)

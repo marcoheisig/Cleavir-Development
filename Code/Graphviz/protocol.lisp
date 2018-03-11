@@ -4,16 +4,16 @@
 ;;;
 ;;; Generic Functions
 
-(defgeneric graphviz-node-caption (graph node))
-
-(defgeneric graphviz-node-properties (graph node)
-  (:method-combination append))
-
 (defgeneric graphviz-node-fillcolor (graph node))
 
 (defgeneric graphviz-node-shape (graph node))
 
 (defgeneric graphviz-node-style (graph node))
+
+(defgeneric graphviz-node-caption (graph node))
+
+(defgeneric graphviz-node-properties (graph node)
+  (:method-combination append))
 
 (defgeneric graphviz-outgoing-edges (graph object)
   (:method-combination append))

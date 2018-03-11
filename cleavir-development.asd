@@ -23,8 +23,8 @@
     :serial t
     :components ((:file "package")
                  (:module "Graphviz"
-                  :components ((:file "protocol")
-                               (:file "html-labels")
+                  :components ((:file "make-html-label")
+                               (:file "protocol")
                                (:file "cst")
                                (:file "ast")
                                (:file "flowchart")
