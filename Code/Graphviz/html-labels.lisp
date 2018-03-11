@@ -9,7 +9,7 @@
     (check-type key string)
     (check-type value string)
     `(:tr ()
-          (:td ((:align "right"))
+          (:td ((:align "left"))
                (:b () ,key))
           (:td ((:align "left"))
                ,value))))
