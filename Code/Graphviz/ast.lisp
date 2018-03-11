@@ -2,6 +2,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
+;;; Generic Functions
+
+(defgeneric ast-source-string (graph ast))
+
+(defgeneric ast-policy-string (graph ast))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
 ;;; Classes
 
 (defclass ast (graph)
@@ -10,6 +18,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Methods
+
+(defmethod ast-source-string
+    ((graph ast) (ast cleavir-ast:ast))
+  (princ-to-string (cleavir-ast:origin ast)))
+
+(defmethod ast-policy-string
+    ((graph ast) (ast cleavir-ast:ast))
+  (princ-to-string (cleavir-ast:policy ast)))
 
 (defmethod graphviz-outgoing-edges append
     ((graph ast) (ast cleavir-ast:ast))
@@ -30,9 +46,8 @@
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:ast))
-  (declare (ignore graph))
-  `(("source" . ,(princ-to-string (cleavir-ast:origin ast)))
-    ("policy" . ,(princ-to-string (cleavir-ast:policy ast)))))
+  `(("source" . ,(ast-source-string graph ast))
+    ("policy" . ,(ast-policy-string graph ast))))
 
 ;;; CONSTANT-AST Attributes
 

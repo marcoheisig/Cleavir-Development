@@ -4,9 +4,9 @@
   (:nicknames #:cleavir-dev)
   (:use #:common-lisp)
   (:export
-   #:*context*
    #:draw
    #:view
+   #:*context*
    #:view-cst
    #:view-ast
    #:view-hir
