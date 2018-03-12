@@ -17,9 +17,7 @@
            (make-instance 'edge
              :object successor))
          (make-data-arc (output)
-           (make-instance 'edge
-             :object output
-             :style :dashed)))
+           (make-edge output :style :dashed)))
     (append
      (mapcar #'make-control-arc (cleavir-ir:successors instruction))
      (mapcar #'make-data-arc (cleavir-ir:outputs instruction)))))

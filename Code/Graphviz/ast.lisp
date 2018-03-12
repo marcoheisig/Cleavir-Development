@@ -32,9 +32,7 @@
   (loop for child in (cleavir-ast:children ast)
         for child-number from 1
         collect
-        (make-instance 'edge
-          :object child
-          :label (princ-to-string child-number))))
+        (make-edge child :label (princ-to-string child-number))))
 
 ;;; The default caption is the lower-case version of the name of the class
 ;;; (as a string) with suffix -ast stripped off.

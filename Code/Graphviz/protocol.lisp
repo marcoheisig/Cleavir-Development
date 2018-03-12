@@ -4,34 +4,41 @@
 ;;;
 ;;; Generic Functions
 
+;;; The first three methods provide a value for the fillcolor, shape and
+;;; style attribute of a graph node.
+
 (defgeneric graphviz-node-fillcolor (graph node))
 
 (defgeneric graphviz-node-shape (graph node))
 
 (defgeneric graphviz-node-style (graph node))
 
+;;; Each graph node has a caption and a list of properties. Each caption
+;;; must be a string. Each property must be a cons of two strings.
+
 (defgeneric graphviz-node-caption (graph node))
 
 (defgeneric graphviz-node-properties (graph node)
   (:method-combination append))
 
-(defgeneric graphviz-outgoing-edges (graph object)
+;;; The next two methods inform CL-DOT about the outgoing and incoming
+;;; edges of a node. The return value must be a list of CL-DOT:ATTRIBUTED
+;;; instances.
+
+(defgeneric graphviz-outgoing-edges (graph node)
   (:method-combination append))
 
-(defgeneric graphviz-incoming-edges (graph object)
+(defgeneric graphviz-incoming-edges (graph node)
   (:method-combination append))
 
-(defgeneric graphviz-known-objects (graph object)
+(defgeneric graphviz-known-nodes (graph node)
   (:method-combination append))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Base Classes
+;;; Classes
 
 (defclass graph ()
-  ())
-
-(defclass edge (cl-dot:attributed)
   ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -71,34 +78,34 @@
 ;;; Default Methods on Edges
 
 (defmethod cl-dot:graph-object-points-to
-    ((graph graph) (object t))
-  (graphviz-outgoing-edges graph object))
+    ((graph graph) (node t))
+  (graphviz-outgoing-edges graph node))
 
 (defmethod cl-dot:graph-object-pointed-to-by
-    ((graph graph) (object t))
-  (graphviz-incoming-edges graph object))
+    ((graph graph) (node t))
+  (graphviz-incoming-edges graph node))
 
 (defmethod cl-dot:graph-object-knows-of
     ((graph graph) (object t))
   (graphviz-known-objects graph object))
 
 (defmethod graphviz-outgoing-edges append
-    ((graph graph) (object t))
+    ((graph graph) (node t))
   '())
 
 (defmethod graphviz-incoming-edges append
-    ((graph graph) (object t))
+    ((graph graph) (node t))
   '())
 
 (defmethod graphviz-known-objects append
-    ((graph graph) (object t))
+    ((graph graph) (node t))
   '())
 
-(defmethod initialize-instance
-    ((instance edge) &rest initargs
-     &key (label "") (style :solid) (weight 1))
-  (apply #'call-next-method instance
-         :attributes `(:label ,label
-                       :style ,style
-                       :weight ,weight)
-         initargs))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; A simple constructor for edges
+
+(defun make-edge (target &rest attributes)
+  (make-instance 'cl-dot:attributed
+    :attributes attributes
+    :object target))
