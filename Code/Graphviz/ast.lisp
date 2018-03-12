@@ -40,7 +40,6 @@
 ;;; (as a string) with suffix -ast stripped off.
 (defmethod graphviz-node-caption
     ((graph ast) (ast cleavir-ast:ast))
-  (declare (ignore graph))
   (let ((name (string (class-name (class-of ast)))))
     (string-downcase (subseq name 0 (- (length name) 4)))))
 
@@ -53,57 +52,48 @@
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:constant-ast))
-  (declare (ignore graph))
   `(("value" . ,(princ-to-string (cleavir-ast:value ast)))))
 
 (defmethod graphviz-node-fillcolor
     ((graph ast) (ast cleavir-ast:constant-ast))
-  (declare (ignore graph ast))
   :green)
 
 ;;; LEXICAL-AST Attributes
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:lexical-ast))
-  (declare (ignore graph))
   `(("name" . ,(princ-to-string (cleavir-ast:name ast)))))
 
 (defmethod graphviz-node-fillcolor
     ((graph ast) (ast cleavir-ast:lexical-ast))
-  (declare (ignore graph ast))
   :yellow)
 
 ;;; TAG-AST Attributes
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:tag-ast))
-  (declare (ignore graph))
   `(("name" . ,(princ-to-string (cleavir-ast:name ast)))))
 
 ;;; TOP-LEVEL-FUNCTION-AST Attributes
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:top-level-function-ast))
-  (declare (ignore graph))
   `(("forms" . ,(princ-to-string (cleavir-ast:forms ast)))))
 
 ;;; LOAD-TIME-VALUE-AST Attributes
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:load-time-value-ast))
-  (declare (ignore graph))
   `(("form" . ,(princ-to-string (cleavir-ast:form ast)))))
 
 (defmethod graphviz-node-fillcolor
     ((graph ast) (ast cleavir-ast:load-time-value-ast))
-  (declare (ignore graph ast))
   :pink)
 
 ;;; BIND-AST Attributes
 
 (defmethod graphviz-node-shape
     ((graph ast) (ast cleavir-ast:bind-ast))
-  (declare (ignore graph ast))
   :ellipse)
 
 ;;; THE-AST Attributes
@@ -119,7 +109,7 @@
 (macrolet ((defcaption (class caption)
              `(defmethod graphviz-node-caption
                   ((graph ast) (ast ,class))
-                (declare (ignorable graph ast))
+                (declare (ignore graph ast))
                 ,caption)))
   (defcaption cleavir-ast:float-add-ast "float +")
   (defcaption cleavir-ast:float-sub-ast "float -")

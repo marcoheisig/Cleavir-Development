@@ -39,25 +39,20 @@
 ;;; Default Methods on Nodes
 
 (defmethod graphviz-node-caption ((graph graph) (node t))
-  (declare (ignore graph))
   (string-downcase
    (class-name
     (class-of node))))
 
 (defmethod graphviz-node-properties append ((graph graph) (node t))
-  (declare (ignore graph node))
   '())
 
 (defmethod graphviz-node-fillcolor ((graph graph) (node t))
-  (declare (ignore graph node))
   :white)
 
 (defmethod graphviz-node-shape ((graph graph) (node t))
-  (declare (ignore graph node))
   :box)
 
 (defmethod graphviz-node-style ((graph graph) (node t))
-  (declare (ignore graph node))
   :filled)
 
 (defmethod cl-dot:graph-object-node
@@ -89,17 +84,14 @@
 
 (defmethod graphviz-outgoing-edges append
     ((graph graph) (object t))
-  (declare (ignore graph object))
   '())
 
 (defmethod graphviz-incoming-edges append
     ((graph graph) (object t))
-  (declare (ignore graph object))
   '())
 
 (defmethod graphviz-known-objects append
     ((graph graph) (object t))
-  (declare (ignore graph object))
   '())
 
 (defmethod initialize-instance
