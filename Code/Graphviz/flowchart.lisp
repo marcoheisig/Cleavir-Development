@@ -50,3 +50,7 @@
   (append
    (cleavir-ir:defining-instructions datum)
    (cleavir-ir:using-instructions datum)))
+
+(defmethod graphviz-node-shape
+    ((graph flowchart) (datum cleavir-ir:datum))
+  :ellipse)
