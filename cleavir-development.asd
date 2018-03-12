@@ -28,9 +28,9 @@
                                (:file "cst")
                                (:file "ast")
                                (:file "flowchart")
-                               (:file "hir-flowchart")
-                               (:file "mir-flowchart")
-                               (:file "lir-flowchart")
+                               (:file "hir")
+                               (:file "mir")
+                               (:file "lir")
                                (:file "visualization")))
                  (:module "Conversion"
                   :components ((:file "convert")

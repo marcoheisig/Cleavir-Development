@@ -13,22 +13,39 @@
 
 (defmethod graphviz-outgoing-edges append
     ((graph flowchart) (instruction cleavir-ir:instruction))
-  (flet ((make-control-arc (successor)
-           (make-edge successor))
-         (make-data-arc (output)
-           (make-edge output :style :dashed)))
-    (append
-     (mapcar #'make-control-arc (cleavir-ir:successors instruction))
-     (mapcar #'make-data-arc (cleavir-ir:outputs instruction)))))
-
-(defmethod graphviz-known-objects append
-    ((graph flowchart) (instruction cleavir-ir:instruction))
-  (declare (ignore graph))
   (append
-   (cleavir-ir:predecessors instruction)
-   (cleavir-ir:inputs instruction)))
+   ;; outgoing control arcs
+   (loop for successor in (cleavir-ir:successors instruction)
+         for i from 1
+         collect
+         (make-edge successor
+                    :style :bold
+                    :label (princ-to-string i)))
+   ;; outgoing data arcs
+   (loop for output in (cleavir-ir:outputs instruction)
+         for i from 1
+         collect
+         (make-edge output
+                    :color :red
+                    :style :dashed
+                    :label (princ-to-string i)))))
 
-(defmethod graphviz-known-objects append
+(defmethod graphviz-incoming-edges append
+    ((graph flowchart) (instruction cleavir-ir:instruction))
+    ;; incoming data arcs
+    (loop for input in (cleavir-ir:inputs instruction)
+          for i from 1
+          collect
+          (make-edge input
+                     :color :blue
+                     :style :dashed
+                     :label (princ-to-string i))))
+
+(defmethod graphviz-known-nodes append
+    ((graph flowchart) (instruction cleavir-ir:instruction))
+  (cleavir-ir:predecessors instruction))
+
+(defmethod graphviz-known-nodes append
     ((graph flowchart) (datum cleavir-ir:datum))
   (append
    (cleavir-ir:defining-instructions datum)

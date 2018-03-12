@@ -3,9 +3,7 @@
 (defclass arbitrary-cleavir-graph
     (ast
      cst
-     hir-flowchart
-     mir-flowchart
-     lir-flowchart)
+     flowchart)
   ())
 
 (defparameter *graphviz-default-graph*

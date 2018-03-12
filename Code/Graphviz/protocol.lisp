@@ -87,7 +87,7 @@
 
 (defmethod cl-dot:graph-object-knows-of
     ((graph graph) (object t))
-  (graphviz-known-objects graph object))
+  (graphviz-known-nodes graph object))
 
 (defmethod graphviz-outgoing-edges append
     ((graph graph) (node t))
@@ -97,7 +97,7 @@
     ((graph graph) (node t))
   '())
 
-(defmethod graphviz-known-objects append
+(defmethod graphviz-known-nodes append
     ((graph graph) (node t))
   '())
 
