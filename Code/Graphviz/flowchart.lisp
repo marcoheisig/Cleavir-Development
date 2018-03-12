@@ -14,8 +14,7 @@
 (defmethod graphviz-outgoing-edges append
     ((graph flowchart) (instruction cleavir-ir:instruction))
   (flet ((make-control-arc (successor)
-           (make-instance 'edge
-             :object successor))
+           (make-edge successor))
          (make-data-arc (output)
            (make-edge output :style :dashed)))
     (append

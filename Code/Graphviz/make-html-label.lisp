@@ -1,8 +1,8 @@
 (cl:in-package #:cleavir-development)
 
-;;; Graphviz allows label specifications in a small subset of HTML. This
-;;; file contains some utilities for the creation of labels in the
-;;; S-expression based HTML notation of CL-DOT.
+;;; Graphviz allows label specifications in a small subset of HTML. The
+;;; following functions simplify the creation of labels in the S-expression
+;;; based HTML notation of CL-DOT.
 
 (defun make-html-label-row (property)
   (destructuring-bind (key . value) property
