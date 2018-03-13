@@ -34,3 +34,29 @@
       (if (string= name-string suffix-string :start1 start1)
           (subseq name-string 0 start1)
           name-string))))
+
+;;; The appearance and behavior of Graphviz graphs, edges and nodes is
+;;; determined by their respective attributes. In CL-DOT, the attributes
+;;; are specified using a property list.
+;;;
+;;; Our goal is to have inheritance on each attribute, e.g. to provide a
+;;; subclass of a graph where some edges are drawn differently or to
+;;; provide a subclass of a graph with more verbose node labels. One way to
+;;; achieve such inheritance is to provide one generic function for each
+;;; attribute. This approach is tedious, however, given the many dozens of
+;;; Graphviz attributes.  Instead, we provide a single generic function for
+;;; each class of Graphviz entities, but with a particular method
+;;; combination. This method combination takes the property lists of all
+;;; applicable methods and removes all but the most specific entry of each
+;;; key.
+
+(defun plist-union (&rest plists)
+  (alexandria:hash-table-plist
+   (alexandria:plist-hash-table
+    (apply #'append plists))))
+
+(define-method-combination graphviz-attributes ()
+  ((primary ()))
+  `(plist-union
+    ,@(loop for method in primary
+            collect `(call-method ,method))))
