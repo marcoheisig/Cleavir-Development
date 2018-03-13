@@ -11,6 +11,11 @@
 ;;;
 ;;; Methods
 
+(defmethod graphviz-node-caption
+    ((graph flowchart) (instruction cleavir-ir:instruction))
+  ;; strip the -INSTRUCTION suffix
+  (strip-suffix (class-name (class-of instruction)) "-instruction"))
+
 (defmethod graphviz-outgoing-edges append
     ((graph flowchart) (instruction cleavir-ir:instruction))
   (append
@@ -27,6 +32,7 @@
          collect
          (make-edge output
                     :color :red
+                    :fontcolor :red
                     :style :dashed
                     :label (princ-to-string i)))))
 
@@ -38,6 +44,7 @@
           collect
           (make-edge input
                      :color :blue
+                     :fontcolor :blue
                      :style :dashed
                      :label (princ-to-string i))))
 

@@ -1,4 +1,4 @@
-(in-package :cleavir-development)
+(cl:in-package #:cleavir-development)
 
 (defclass arbitrary-cleavir-graph
     (ast

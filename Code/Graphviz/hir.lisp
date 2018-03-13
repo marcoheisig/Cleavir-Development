@@ -10,7 +10,7 @@
     ((graph flowchart) (datum cleavir-ir:constant-input))
   (princ-to-string (cleavir-ir:value datum)))
 
-(defmethod graphviz-node-color
+(defmethod graphviz-node-fillcolor
     ((graph flowchart) (datum cleavir-ir:constant-input))
   :green)
 

@@ -5,25 +5,15 @@
   :depends-on ("uiop"
                "alexandria"
                "cl-dot"
-               "sicl-boot"
-               "sicl-simple-environment"
-               "sicl-environment"
-               "sicl-extrinsic-environment"
-               "eclector-concrete-syntax-tree"
                "concrete-syntax-tree"
                "cleavir-ast"
-               "cleavir-io"
-               "cleavir-environment"
-               "cleavir-cst-to-ast"
-               "cleavir-ast-to-hir"
-               "cleavir-generate-ast"
-               "cleavir-generate-ast-test")
+               "cleavir-ir")
   :components
   ((:module "Code"
     :serial t
     :components ((:file "package")
                  (:module "Graphviz"
-                  :components ((:file "make-html-label")
+                  :components ((:file "utilities")
                                (:file "protocol")
                                (:file "cst")
                                (:file "ast")
@@ -31,11 +21,21 @@
                                (:file "hir")
                                (:file "mir")
                                (:file "lir")
-                               (:file "visualization")))
-                 (:module "Conversion"
-                  :components ((:file "convert")
-                               (:file "cleavir")
-                               (:file "sicl")
-                               (:file "convert-and-view")))))
-   (:module "Examples"
-    :components ((:file "view")))))
+                               (:file "visualization")))))))
+
+(defsystem "cleavir-development-examples"
+  :description "Some illustrating examples for the Cleavir development tools."
+  :author "Marco Heisig <marco.heisig@fau.de>"
+  :license "BSD"
+  :depends-on ("cleavir-development"
+               "sicl-extrinsic-environment"
+               "eclector-concrete-syntax-tree"
+               "cleavir-cst-to-ast")
+  :components
+  ((:module "Examples"
+    :serial t
+    :components ((:file "package")
+                 (:file "environment")
+                 (:file "cst")
+                 (:file "ast")
+                 (:file "hir")))))

@@ -34,12 +34,9 @@
         collect
         (make-edge child :label (princ-to-string child-number))))
 
-;;; The default caption is the lower-case version of the name of the class
-;;; (as a string) with suffix -ast stripped off.
 (defmethod graphviz-node-caption
     ((graph ast) (ast cleavir-ast:ast))
-  (let ((name (string (class-name (class-of ast)))))
-    (string-downcase (subseq name 0 (- (length name) 4)))))
+  (strip-suffix (class-name (class-of ast)) "-ast"))
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:ast))

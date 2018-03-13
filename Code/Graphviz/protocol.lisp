@@ -4,8 +4,8 @@
 ;;;
 ;;; Generic Functions
 
-;;; The first three methods provide a value for the fillcolor, shape and
-;;; style attribute of a graph node.
+;;; These methods provide values for the fillcolor, shape and style
+;;; attribute of a graph node. Each value must be a keyword.
 
 (defgeneric graphviz-node-fillcolor (graph node))
 
@@ -14,22 +14,25 @@
 (defgeneric graphviz-node-style (graph node))
 
 ;;; Each graph node has a caption and a list of properties. Each caption
-;;; must be a string. Each property must be a cons of two strings.
+;;; must be a string. Each property must be a cons of two strings, the key
+;;; and the corresponding value.
 
 (defgeneric graphviz-node-caption (graph node))
 
 (defgeneric graphviz-node-properties (graph node)
   (:method-combination append))
 
-;;; The next two methods inform CL-DOT about the outgoing and incoming
-;;; edges of a node. The return value must be a list of CL-DOT:ATTRIBUTED
-;;; instances.
+;;; The next methods inform CL-DOT about the outgoing and incoming edges of
+;;; a node. They return lists of instances of the class CL-DOT:ATTRIBUTED.
 
 (defgeneric graphviz-outgoing-edges (graph node)
   (:method-combination append))
 
 (defgeneric graphviz-incoming-edges (graph node)
   (:method-combination append))
+
+;;; This method informs CL-DOT of other nodes in the graph. It returns a
+;;; list of graph nodes.
 
 (defgeneric graphviz-known-nodes (graph node)
   (:method-combination append))
