@@ -25,6 +25,7 @@
          collect
          (make-edge successor
                     :style :bold
+                    :weight 3
                     :label (princ-to-string i)))
    ;; outgoing data arcs
    (loop for output in (cleavir-ir:outputs instruction)

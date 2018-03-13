@@ -60,6 +60,7 @@
     ((graph flowchart) (instruction cleavir-ir:enclose-instruction))
   (list (make-edge (cleavir-ir:code instruction)
                    :color :pink
+                   :weight 2
                    :style :dashed)))
 
 ;;; UNWIND-INSTRUCTION
@@ -68,4 +69,5 @@
     ((graph flowchart) (instruction cleavir-ir:unwind-instruction))
   (list (make-edge (cleavir-ir:invocation instruction)
                    :color :pink
+                   :weight 2
                    :style :dashed)))
