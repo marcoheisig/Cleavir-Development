@@ -7,58 +7,87 @@
 (defclass flowchart (graph)
   ())
 
+(defclass control-arc (edge)
+  ())
+
+(defclass data-arc (edge)
+  ())
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Methods
 
+(defmethod graphviz-node-attributes
+    ((graph flowchart) node)
+  '(:shape :ellipse :style :filled))
+
+(defmethod graphviz-node-attributes
+    ((graph flowchart) (datum cleavir-ir:datum))
+  '(:shape :ellipse))
+
+(defmethod graphviz-edge-attributes
+    ((graph flowchart) (edge edge) from to edge-number)
+  `(:label ,(princ-to-string (1+ edge-number))))
+
+(defmethod graphviz-edge-attributes
+    ((graph flowchart)
+     (edge control-arc)
+     (from cleavir-ir:instruction)
+     (to cleavir-ir:instruction)
+     edge-number)
+  '(:color :blue
+    :fontcolor :blue
+    :style :dashed))
+
+(defmethod graphviz-edge-attributes
+    ((graph flowchart)
+     (edge data-arc)
+     (from cleavir-ir:instruction)
+     (to cleavir-ir:datum)
+     edge-number)
+  '(:color :red
+    :fontcolor :red
+    :style :dashed))
+
+(defmethod graphviz-edge-attributes
+    ((graph flowchart)
+     (edge data-arc)
+     (from cleavir-ir:datum)
+     (to cleavir-ir:instruction)
+     edge-number)
+  '(:style :bold
+    :weight 3))
+
 (defmethod graphviz-node-caption
-    ((graph flowchart) (instruction cleavir-ir:instruction))
-  ;; strip the -INSTRUCTION suffix
+    ((graph flowchart)
+     (instruction cleavir-ir:instruction))
   (strip-suffix (class-name (class-of instruction)) "-instruction"))
 
-(defmethod graphviz-outgoing-edges append
-    ((graph flowchart) (instruction cleavir-ir:instruction))
-  (append
-   ;; outgoing control arcs
-   (loop for successor in (cleavir-ir:successors instruction)
-         for i from 1
-         collect
-         (make-edge successor
-                    :style :bold
-                    :weight 3
-                    :label (princ-to-string i)))
-   ;; outgoing data arcs
-   (loop for output in (cleavir-ir:outputs instruction)
-         for i from 1
-         collect
-         (make-edge output
-                    :color :red
-                    :fontcolor :red
-                    :style :dashed
-                    :label (princ-to-string i)))))
+(defmethod graphviz-potential-edges append
+    ((graph flowchart)
+     (instruction cleavir-ir:instruction))
+  (list (make-instance 'data-arc)
+        (make-instance 'control-arc)))
 
-(defmethod graphviz-incoming-edges append
-    ((graph flowchart) (instruction cleavir-ir:instruction))
-    ;; incoming data arcs
-    (loop for input in (cleavir-ir:inputs instruction)
-          for i from 1
-          collect
-          (make-edge input
-                     :color :blue
-                     :fontcolor :blue
-                     :style :dashed
-                     :label (princ-to-string i))))
+(defmethod graphviz-potential-edges append
+    ((graph flowchart)
+     (datum cleavir-ir:datum))
+  (list (make-instance 'data-arc)))
 
-(defmethod graphviz-known-nodes append
-    ((graph flowchart) (instruction cleavir-ir:instruction))
-  (cleavir-ir:predecessors instruction))
+(defmethod graphviz-outgoing-edge-targets
+    ((graph flowchart)
+     (edge control-arc)
+     (instruction cleavir-ir:instruction))
+  (cleavir-ir:successors instruction))
 
-(defmethod graphviz-known-nodes append
-    ((graph flowchart) (datum cleavir-ir:datum))
-  (append
-   (cleavir-ir:defining-instructions datum)
-   (cleavir-ir:using-instructions datum)))
+(defmethod graphviz-outgoing-edge-targets
+    ((graph flowchart)
+     (edge data-arc)
+     (instruction cleavir-ir:instruction))
+  (cleavir-ir:outputs instruction))
 
-(defmethod graphviz-node-shape
-    ((graph flowchart) (datum cleavir-ir:datum))
-  :ellipse)
+(defmethod graphviz-incoming-edge-origins
+    ((graph flowchart)
+     (edge data-arc)
+     (instruction cleavir-ir:instruction))
+  (cleavir-ir:inputs instruction))

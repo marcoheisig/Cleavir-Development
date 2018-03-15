@@ -10,9 +10,9 @@
     ((graph flowchart) (datum cleavir-ir:constant-input))
   (princ-to-string (cleavir-ir:value datum)))
 
-(defmethod graphviz-node-fillcolor
+(defmethod graphviz-node-attributes
     ((graph flowchart) (datum cleavir-ir:constant-input))
-  :green)
+  '(:fillcolor :green))
 
 ;;; LEXICAL-LOCATION
 
@@ -20,35 +20,35 @@
     ((graph flowchart) (datum cleavir-ir:lexical-location))
   (princ-to-string (cleavir-ir:name datum)))
 
-(defmethod graphviz-node-fillcolor
+(defmethod graphviz-node-attributes
     ((graph flowchart) (datum cleavir-ir:lexical-location))
-  :yellow)
+  '(:fillcolor :yellow))
 
 ;;; VALUES-LOCATION
 
 (defmethod graphviz-node-fillcolor
     ((graph flowchart) (datum cleavir-ir:values-location))
-  :blue)
+  '(:fillcolor :blue))
 
 ;;; IMMEDIATE-INPUT
-
-(defmethod graphviz-node-fillcolor
-    ((graph flowchart) (datum cleavir-ir:immediate-input))
-  :aquamarine)
 
 (defmethod graphviz-node-caption
     ((graph flowchart) (datum cleavir-ir:immediate-input))
   (princ-to-string (cleavir-ir:value datum)))
 
-;;; LOAD-TIME-VALUE-INPUT
-
 (defmethod graphviz-node-fillcolor
-    ((graph flowchart) (datum cleavir-ir:load-time-value-input))
-  :orange)
+    ((graph flowchart) (datum cleavir-ir:immediate-input))
+  '(:fillcolor :aquamarine))
+
+;;; LOAD-TIME-VALUE-INPUT
 
 (defmethod graphviz-node-caption
     ((graph flowchart) (datum cleavir-ir:load-time-value-input))
   (princ-to-string (cleavir-ir:form datum)))
+
+(defmethod graphviz-node-fillcolor
+    ((graph flowchart) (datum cleavir-ir:load-time-value-input))
+  '(:fillcolor :orange))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -56,6 +56,7 @@
 
 ;;; ENCLOSE-INSTRUCTION
 
+#+nil
 (defmethod graphviz-incoming-edges append
     ((graph flowchart) (instruction cleavir-ir:enclose-instruction))
   (list (make-edge (cleavir-ir:code instruction)
@@ -65,6 +66,7 @@
 
 ;;; UNWIND-INSTRUCTION
 
+#+nil
 (defmethod graphviz-outgoing-edges append
     ((graph flowchart) (instruction cleavir-ir:unwind-instruction))
   (list (make-edge (cleavir-ir:invocation instruction)

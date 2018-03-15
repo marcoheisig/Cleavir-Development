@@ -2,46 +2,40 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Generic Functions
-
-(defgeneric ast-source-string (graph ast))
-
-(defgeneric ast-policy-string (graph ast))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
 ;;; Classes
 
 (defclass ast (graph)
+  ())
+
+(defclass ast-edge (edge)
   ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Methods
 
-(defmethod ast-source-string
+(defmethod graphviz-node-attributes
     ((graph ast) (ast cleavir-ast:ast))
-  (princ-to-string (cleavir-ast:origin ast)))
+  '(:style :filled
+    :fillcolor :white
+    :shape :box))
 
-(defmethod ast-policy-string
-    ((graph ast) (ast cleavir-ast:ast))
-  (princ-to-string (cleavir-ast:policy ast)))
-
-(defmethod graphviz-outgoing-edges append
-    ((graph ast) (ast cleavir-ast:ast))
-  (loop for child in (cleavir-ast:children ast)
-        for child-number from 1
-        collect
-        (make-edge child :label (princ-to-string child-number))))
+(defmethod graphviz-edge-attributes
+    ((graph ast) (edge ast-edge) from to edge-number)
+  (let ((label (princ-to-string (1+ edge-number))))
+    `(:label ,label)))
 
 (defmethod graphviz-node-caption
     ((graph ast) (ast cleavir-ast:ast))
   (strip-suffix (class-name (class-of ast)) "-ast"))
 
-(defmethod graphviz-node-properties append
-    ((graph ast) (ast cleavir-ast:ast))
-  `(("source" . ,(ast-source-string graph ast))
-    ("policy" . ,(ast-policy-string graph ast))))
+(defmethod graphviz-potential-edges append
+    ((graph ast) (node cleavir-ast:ast))
+  (list (make-instance 'ast-edge)))
+
+(defmethod graphviz-outgoing-edge-targets
+    ((graph ast) (edge ast-edge) (ast cleavir-ast:ast))
+  (cleavir-ast:children ast))
 
 ;;; CONSTANT-AST Attributes
 
@@ -49,9 +43,9 @@
     ((graph ast) (ast cleavir-ast:constant-ast))
   `(("value" . ,(princ-to-string (cleavir-ast:value ast)))))
 
-(defmethod graphviz-node-fillcolor
+(defmethod graphviz-node-attributes
     ((graph ast) (ast cleavir-ast:constant-ast))
-  :green)
+  '(:fillcolor :green))
 
 ;;; LEXICAL-AST Attributes
 
@@ -59,9 +53,9 @@
     ((graph ast) (ast cleavir-ast:lexical-ast))
   `(("name" . ,(princ-to-string (cleavir-ast:name ast)))))
 
-(defmethod graphviz-node-fillcolor
+(defmethod graphviz-node-attributes
     ((graph ast) (ast cleavir-ast:lexical-ast))
-  :yellow)
+  '(:fillcolor :yellow))
 
 ;;; TAG-AST Attributes
 
@@ -81,15 +75,15 @@
     ((graph ast) (ast cleavir-ast:load-time-value-ast))
   `(("form" . ,(princ-to-string (cleavir-ast:form ast)))))
 
-(defmethod graphviz-node-fillcolor
+(defmethod graphviz-node-attributes
     ((graph ast) (ast cleavir-ast:load-time-value-ast))
-  :pink)
+  '(:fillcolor :pink))
 
 ;;; BIND-AST Attributes
 
-(defmethod graphviz-node-shape
+(defmethod graphviz-node-attributes
     ((graph ast) (ast cleavir-ast:bind-ast))
-  :ellipse)
+  '(:shape :ellipse))
 
 ;;; THE-AST Attributes
 

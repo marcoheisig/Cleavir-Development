@@ -15,6 +15,7 @@
                  (:module "Graphviz"
                   :components ((:file "utilities")
                                (:file "protocol")
+                               (:file "cleavir")
                                (:file "cst")
                                (:file "ast")
                                (:file "flowchart")

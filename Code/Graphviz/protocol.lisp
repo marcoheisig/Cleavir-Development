@@ -4,35 +4,41 @@
 ;;;
 ;;; Generic Functions
 
-;;; These methods provide values for the fillcolor, shape and style
-;;; attribute of a graph node. Each value must be a keyword.
+(defgeneric graphviz-graph-attributes (graph)
+  (:method-combination graphviz-attributes))
 
-(defgeneric graphviz-node-fillcolor (graph node))
+(defgeneric graphviz-node-attributes (graph node)
+  (:method-combination graphviz-attributes))
 
-(defgeneric graphviz-node-shape (graph node))
+(defgeneric graphviz-edge-attributes (graph edge from to edge-number)
+  (:method-combination graphviz-attributes))
 
-(defgeneric graphviz-node-style (graph node))
-
-;;; Each graph node has a caption and a list of properties. Each caption
-;;; must be a string. Each property must be a cons of two strings, the key
-;;; and the corresponding value.
+;;; The caption and the properties of a node are used to compute its label.
+;;; Each pair of strings in the list of properties is rendered as a
+;;; key-value entry below the caption.
 
 (defgeneric graphviz-node-caption (graph node))
 
 (defgeneric graphviz-node-properties (graph node)
   (:method-combination append))
 
-;;; The next methods inform CL-DOT about the outgoing and incoming edges of
-;;; a node. They return lists of instances of the class CL-DOT:ATTRIBUTED.
+;;; The edge drawing protocol is somewhat involved, but for a good reason.
+;;; We want to be able to subclass graphs to add or remove edges or to
+;;; change the appearance of some edges.  To do so, the protocol works in
+;;; three steps.  In the first step, a generic function is used to
+;;; determine all types of edges that reach a given node.  In the second
+;;; step, the node is queried for incoming and outgoing edges of each of
+;;; these types.  In the third step, the current graph type, edge type,
+;;; start node, target node and the position of the edge in the sequence
+;;; returned from the previous step are used to derive the attributes of
+;;; that edge.
 
-(defgeneric graphviz-outgoing-edges (graph node)
+(defgeneric graphviz-potential-edges (graph node)
   (:method-combination append))
 
-(defgeneric graphviz-incoming-edges (graph node)
-  (:method-combination append))
+(defgeneric graphviz-outgoing-edge-targets (graph edge node))
 
-;;; This method informs CL-DOT of other nodes in the graph. It returns a
-;;; list of graph nodes.
+(defgeneric graphviz-incoming-edge-origins (graph edge node))
 
 (defgeneric graphviz-known-nodes (graph node)
   (:method-combination append))
@@ -44,71 +50,88 @@
 (defclass graph ()
   ())
 
+(defclass edge ()
+  ())
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Default Methods on Nodes
+;;; Default Methods
 
-(defmethod graphviz-node-caption ((graph graph) (node t))
+(defmethod graphviz-graph-attributes
+    ((graph graph))
+  '())
+
+(defmethod graphviz-node-attributes
+    ((graph graph) node)
+  '())
+
+(defmethod graphviz-edge-attributes
+    ((graph graph) edge from to edge-number)
+  '())
+
+(defmethod graphviz-node-caption
+    ((graph graph) node)
   (string-downcase
    (class-name
     (class-of node))))
 
-(defmethod graphviz-node-properties append ((graph graph) (node t))
+(defmethod graphviz-node-properties append
+    ((graph graph) node)
   '())
 
-(defmethod graphviz-node-fillcolor ((graph graph) (node t))
-  :white)
-
-(defmethod graphviz-node-shape ((graph graph) (node t))
-  :box)
-
-(defmethod graphviz-node-style ((graph graph) (node t))
-  :filled)
-
-(defmethod cl-dot:graph-object-node
-    ((graph graph) (node t))
-  (make-instance 'cl-dot:node
-    :attributes
-    `(:label ,(make-html-label
-               :caption (graphviz-node-caption graph node)
-               :properties (graphviz-node-properties graph node))
-      :fillcolor ,(graphviz-node-fillcolor graph node)
-      :shape ,(graphviz-node-shape graph node)
-      :style ,(graphviz-node-style graph node))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;; Default Methods on Edges
-
-(defmethod cl-dot:graph-object-points-to
-    ((graph graph) (node t))
-  (graphviz-outgoing-edges graph node))
-
-(defmethod cl-dot:graph-object-pointed-to-by
-    ((graph graph) (node t))
-  (graphviz-incoming-edges graph node))
-
-(defmethod cl-dot:graph-object-knows-of
-    ((graph graph) (object t))
-  (graphviz-known-nodes graph object))
-
-(defmethod graphviz-outgoing-edges append
-    ((graph graph) (node t))
+(defmethod graphviz-potential-edges append
+    ((graph graph) node)
   '())
 
-(defmethod graphviz-incoming-edges append
-    ((graph graph) (node t))
+(defmethod graphviz-outgoing-edge-targets
+    ((graph graph) (edge edge) node)
+  '())
+
+(defmethod graphviz-incoming-edge-origins
+    ((graph graph) (edge edge) node)
   '())
 
 (defmethod graphviz-known-nodes append
-    ((graph graph) (node t))
+    ((graph graph) node)
   '())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; A simple constructor for edges
+;;; CL-DOT Integration
 
-(defun make-edge (target &rest attributes)
-  (make-instance 'cl-dot:attributed
-    :attributes attributes
-    :object target))
+(defmethod cl-dot:graph-object-node
+    ((graph graph) node)
+  (make-instance 'cl-dot:node
+    :attributes
+    `(:label
+      ,(make-html-label
+        :caption (graphviz-node-caption graph node)
+        :properties (graphviz-node-properties graph node))
+      ,@(graphviz-node-attributes graph node))))
+
+(defmethod cl-dot:graph-object-points-to
+    ((graph graph) node)
+  ;; There must be a more graceful way to loop over sequences...
+  (loop for edge in (coerce (graphviz-potential-edges graph node) 'list)
+        append
+        (loop for target in (coerce (graphviz-outgoing-edge-targets graph edge node) 'list)
+              for edge-number from 0
+              collect
+              (make-instance 'cl-dot:attributed
+                :attributes (graphviz-edge-attributes graph edge node target edge-number)
+                :object target))))
+
+(defmethod cl-dot:graph-object-pointed-to-by
+    ((graph graph) node)
+  (loop for edge in (coerce (graphviz-potential-edges graph node) 'list)
+        append
+        (loop for origin in (coerce (graphviz-incoming-edge-origins graph edge node) 'list)
+              for edge-number from 0
+              collect
+              (make-instance 'cl-dot:attributed
+                :attributes (graphviz-edge-attributes graph edge origin node edge-number)
+                :object origin))))
+
+(defmethod cl-dot:graph-object-knows-of
+    ((graph graph) object)
+  (graphviz-known-nodes graph object))

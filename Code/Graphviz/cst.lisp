@@ -2,40 +2,37 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Generic Functions
-
-(defgeneric cst-value-string (graph atom-cst))
-
-(defgeneric cst-source-string (graph cst))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
 ;;; Classes
 
 (defclass cst (graph)
+  ())
+
+(defclass cst-edge (edge)
   ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Methods
 
-(defmethod cst-value-string
-    ((graph cst) (cst cst:atom-cst))
-  (princ-to-string (cst:raw cst)))
-
-(defmethod cst-source-string
+(defmethod graphviz-node-attributes
     ((graph cst) (cst cst:cst))
-  (princ-to-string (cst:source cst)))
+  `(:shape :box
+    :style :filled))
 
-(defmethod graphviz-outgoing-edges append
-    ((graph cst) (atom-cst concrete-syntax-tree:atom-cst))
-  nil)
-
-(defmethod graphviz-outgoing-edges append
+(defmethod graphviz-node-attributes
     ((graph cst) (cons-cst cst:cons-cst))
-  (list
-   (make-edge (cst:first cons-cst) :label "first")
-   (make-edge (cst:rest cons-cst) :label "rest")))
+  `(:fillcolor :gray))
+
+(defmethod graphviz-node-attributes
+    ((graph cst) (atom-cst cst:atom-cst))
+  `(:fillcolor :white))
+
+(defmethod graphviz-edge-attributes
+    ((graph cst) (edge cst-edge) from to edge-number)
+  (let ((label (ecase edge-number
+                 (0 "car")
+                 (1 "cdr"))))
+    `(:label ,label)))
 
 (defmethod graphviz-node-caption
     ((graph cst) (node cst:cons-cst))
@@ -46,13 +43,14 @@
   "atom")
 
 (defmethod graphviz-node-properties append
-    ((graph cst) (cst cst:cst))
-  `(("source" . ,(cst-source-string graph cst))))
-
-(defmethod graphviz-node-properties append
     ((graph cst) (cst cst:atom-cst))
-  `(("value" . ,(cst-value-string graph cst))))
+  `(("value" . ,(princ-to-string (cst:raw cst)))))
 
-(defmethod graphviz-node-fillcolor
-    ((graph cst) (cons-cst concrete-syntax-tree:cons-cst))
-  :gray)
+(defmethod graphviz-potential-edges append
+    ((graph cst) (node cst:cons-cst))
+  (list (make-instance 'cst-edge)))
+
+(defmethod graphviz-outgoing-edge-targets
+    ((graph cst) (edge cst-edge) (cons-cst cst:cons-cst))
+  (list (cst:first cons-cst)
+        (cst:rest cons-cst)))

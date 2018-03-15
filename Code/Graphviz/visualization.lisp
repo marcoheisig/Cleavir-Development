@@ -1,9 +1,11 @@
 (cl:in-package #:cleavir-development)
 
 (defclass arbitrary-cleavir-graph
-    (ast
-     cst
-     flowchart)
+    (cst
+     ast
+     flowchart
+     source-mixin
+     policy-mixin)
   ())
 
 (defparameter *graphviz-default-graph*
@@ -24,7 +26,11 @@
                                (graph *graphviz-default-graph*)
                                (attributes '()))
   (cl-dot:dot-graph
-   (cl-dot:generate-graph-from-roots graph (list graph-root) attributes)
+   (cl-dot:generate-graph-from-roots
+    (if (symbolp graph)
+        (make-instance graph)
+        graph)
+    (list graph-root) attributes)
    file :format format))
 
 (defun view (graph-root &key

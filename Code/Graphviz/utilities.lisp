@@ -1,5 +1,9 @@
 (cl:in-package #:cleavir-development)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; HTML Labels
+;;;
 ;;; Graphviz allows label specifications in a small subset of HTML. The
 ;;; following functions simplify the creation of labels in the S-expression
 ;;; based HTML notation of CL-DOT.
@@ -22,6 +26,10 @@
           (:td ((:align "left"))
                ,value))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Class Names
+;;;
 ;;; The naming convention of some Cleavir classes is NAME-X, where X is the
 ;;; name of its direct superclass, e.g. INSTRUCTION or AST. We provide a
 ;;; function to remove such suffixes. The result is a lowercase string.
@@ -35,6 +43,10 @@
           (subseq name-string 0 start1)
           name-string))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Graphviz Attribute Method Combination
+;;;
 ;;; The appearance and behavior of Graphviz graphs, edges and nodes is
 ;;; determined by their respective attributes. In CL-DOT, the attributes
 ;;; are specified using a property list.
