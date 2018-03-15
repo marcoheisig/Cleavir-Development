@@ -35,9 +35,8 @@
      (from cleavir-ir:instruction)
      (to cleavir-ir:instruction)
      edge-number)
-  '(:color :blue
-    :fontcolor :blue
-    :style :dashed))
+  '(:style :bold
+    :weight 3))
 
 (defmethod graphviz-edge-attributes
     ((graph flowchart)
@@ -55,8 +54,9 @@
      (from cleavir-ir:datum)
      (to cleavir-ir:instruction)
      edge-number)
-  '(:style :bold
-    :weight 3))
+  '(:color :blue
+    :fontcolor :blue
+    :style :dashed))
 
 (defmethod graphviz-node-caption
     ((graph flowchart)
@@ -91,3 +91,15 @@
      (edge data-arc)
      (instruction cleavir-ir:instruction))
   (cleavir-ir:inputs instruction))
+
+(defmethod graphviz-known-nodes append
+    ((graph flowchart) (instruction cleavir-ir:instruction))
+  (append (cleavir-ir:inputs instruction)
+          (cleavir-ir:outputs instruction)
+          (cleavir-ir:predecessors instruction)
+          (cleavir-ir:successors instruction)))
+
+(defmethod graphviz-known-nodes append
+    ((graph flowchart) (datum cleavir-ir:datum))
+  (append (cleavir-ir:defining-instructions datum)
+          (cleavir-ir:using-instructions datum)))

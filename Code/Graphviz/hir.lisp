@@ -2,6 +2,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
+;;; Classes
+
+;; Is there a name for the edges of unwind and enclose instructions?
+(defclass pink-edge (edge)
+  ())
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
 ;;; Methods for drawing data
 
 ;;; CONSTANT-INPUT
@@ -54,22 +62,29 @@
 ;;;
 ;;; Methods for drawing instructions
 
+(defmethod graphviz-edge-attributes
+    ((graph flowchart) (edge pink-edge) from to edge-number)
+  '(:color :pink
+    :style :dashed
+    :weight 2
+    :label ""))
+
 ;;; ENCLOSE-INSTRUCTION
 
-#+nil
-(defmethod graphviz-incoming-edges append
-    ((graph flowchart) (instruction cleavir-ir:enclose-instruction))
-  (list (make-edge (cleavir-ir:code instruction)
-                   :color :pink
-                   :weight 2
-                   :style :dashed)))
+(defmethod graphviz-potential-edges append
+    ((graph flowchart) (node cleavir-ir:enclose-instruction))
+  (list (make-instance 'pink-edge)))
+
+(defmethod graphviz-incoming-edge-origins
+    ((graph flowchart) (edge pink-edge) (instruction cleavir-ir:enclose-instruction))
+  (list (cleavir-ir:code instruction)))
 
 ;;; UNWIND-INSTRUCTION
 
-#+nil
-(defmethod graphviz-outgoing-edges append
-    ((graph flowchart) (instruction cleavir-ir:unwind-instruction))
-  (list (make-edge (cleavir-ir:invocation instruction)
-                   :color :pink
-                   :weight 2
-                   :style :dashed)))
+(defmethod graphviz-potential-edges append
+    ((graph flowchart) (node cleavir-ir:unwind-instruction))
+  (list (make-instance 'pink-edge)))
+
+(defmethod graphviz-incoming-edge-origins
+    ((graph flowchart) (edge pink-edge) (instruction cleavir-ir:unwind-instruction))
+  (list (cleavir-ir:invocation instruction)))
