@@ -19,7 +19,8 @@
 
 (defmethod graphviz-node-attributes
     ((graph flowchart) node)
-  '(:shape :ellipse :style :filled))
+  '(:shape :box
+    :style :filled))
 
 (defmethod graphviz-node-attributes
     ((graph flowchart) (datum cleavir-ir:datum))
