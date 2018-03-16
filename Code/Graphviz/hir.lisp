@@ -92,3 +92,29 @@
 (defmethod graphviz-incoming-edge-origins
     ((graph flowchart) (edge pink-edge) (instruction cleavir-ir:unwind-instruction))
   (list (cleavir-ir:invocation instruction)))
+
+;;; ENTER-INSTRUCTION
+
+(defmethod graphviz-node-properties append
+    ((graph flowchart) (instruction cleavir-ir:enter-instruction))
+  (labels ((simplify (item)
+             (etypecase item
+               (symbol item)
+               (list (mapcar #'simplify item))
+               (cleavir-ir:lexical-location
+                (1+ (position item (cleavir-ir:outputs instruction)))))))
+    `(("lambda-list"
+       .
+       ,(stringify
+         (mapcar #'simplify (cleavir-ir:lambda-list instruction)))))))
+
+;;; TOP-LEVEL-ENTER-INSTRUCTION
+
+(defmethod graphviz-node-properties append
+    ((graph flowchart) (instruction cleavir-ir:top-level-enter-instruction))
+  (loop for form in (cleavir-ir:forms instruction)
+        for index from 1
+        collect
+        (cons
+         (format nil "form-~D" index)
+         (stringify form))))
