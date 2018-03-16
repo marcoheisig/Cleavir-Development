@@ -26,7 +26,7 @@
 
 (defmethod graphviz-node-caption
     ((graph flowchart) (datum cleavir-ir:lexical-location))
-  (princ-to-string (cleavir-ir:name datum)))
+  (string-downcase (cleavir-ir:name datum)))
 
 (defmethod graphviz-node-attributes
     ((graph flowchart) (datum cleavir-ir:lexical-location))
@@ -34,7 +34,11 @@
 
 ;;; VALUES-LOCATION
 
-(defmethod graphviz-node-fillcolor
+(defmethod graphviz-node-caption
+    ((graph flowchart) (datum cleavir-ir:values-location))
+  "V")
+
+(defmethod graphviz-node-attributes
     ((graph flowchart) (datum cleavir-ir:values-location))
   '(:fillcolor :blue))
 
@@ -44,7 +48,7 @@
     ((graph flowchart) (datum cleavir-ir:immediate-input))
   (princ-to-string (cleavir-ir:value datum)))
 
-(defmethod graphviz-node-fillcolor
+(defmethod graphviz-node-attributes
     ((graph flowchart) (datum cleavir-ir:immediate-input))
   '(:fillcolor :aquamarine))
 
@@ -54,7 +58,7 @@
     ((graph flowchart) (datum cleavir-ir:load-time-value-input))
   (princ-to-string (cleavir-ir:form datum)))
 
-(defmethod graphviz-node-fillcolor
+(defmethod graphviz-node-attributes
     ((graph flowchart) (datum cleavir-ir:load-time-value-input))
   '(:fillcolor :orange))
 

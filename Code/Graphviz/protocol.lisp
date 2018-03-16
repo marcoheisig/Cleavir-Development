@@ -26,12 +26,12 @@
 ;;; We want to be able to subclass graphs to add or remove edges or to
 ;;; change the appearance of some edges.  To do so, the protocol works in
 ;;; three steps.  In the first step, a generic function is used to
-;;; determine all types of edges that reach a given node.  In the second
-;;; step, the node is queried for incoming and outgoing edges of each of
-;;; these types.  In the third step, the current graph type, edge type,
-;;; start node, target node and the position of the edge in the sequence
-;;; returned from the previous step are used to derive the attributes of
-;;; that edge.
+;;; determine all types of edges that potentially reach a given node.  In
+;;; the second step, the node is queried for incoming and outgoing edges of
+;;; each of these types.  In the third step, the current graph type, edge
+;;; type, start node, target node and the position of the edge in the
+;;; sequence returned from the previous step are used to derive the
+;;; attributes of that edge.
 
 (defgeneric graphviz-potential-edges (graph node)
   (:method-combination append))
@@ -111,9 +111,9 @@
 
 (defmethod cl-dot:graph-object-points-to
     ((graph graph) node)
-  ;; There must be a more graceful way to loop over sequences...
-  (loop for edge in (coerce (graphviz-potential-edges graph node) 'list)
+  (loop for edge in (graphviz-potential-edges graph node)
         append
+        ;; There must be a more graceful way to loop over sequences...
         (loop for target in (coerce (graphviz-outgoing-edge-targets graph edge node) 'list)
               for edge-number from 0
               collect
@@ -123,7 +123,7 @@
 
 (defmethod cl-dot:graph-object-pointed-to-by
     ((graph graph) node)
-  (loop for edge in (coerce (graphviz-potential-edges graph node) 'list)
+  (loop for edge in (graphviz-potential-edges graph node)
         append
         (loop for origin in (coerce (graphviz-incoming-edge-origins graph edge node) 'list)
               for edge-number from 0

@@ -23,24 +23,23 @@
 
 (defun draw (graph-root file &key
                                (format :pdf)
-                               (graph *graphviz-default-graph*)
-                               (attributes '()))
-  (cl-dot:dot-graph
-   (cl-dot:generate-graph-from-roots
-    (if (symbolp graph)
-        (make-instance graph)
-        graph)
-    (list graph-root) attributes)
-   file :format format))
+                               (graph *graphviz-default-graph*))
+  (let ((graph (if (symbolp graph)
+                   (make-instance graph)
+                   graph)))
+    (cl-dot:dot-graph
+     (cl-dot:generate-graph-from-roots
+      graph
+      (list graph-root)
+      (graphviz-graph-attributes graph))
+     file :format format)))
 
 (defun view (graph-root &key
                           (format :pdf)
                           (graph *graphviz-default-graph*)
-                          (viewer *graphviz-default-viewer*)
-                          (attributes '()))
+                          (viewer *graphviz-default-viewer*))
   (uiop:with-temporary-file (:pathname file :type format)
     (draw graph-root file :format format
-                          :graph graph
-                          :attributes attributes)
+                          :graph graph)
     (uiop:run-program
      (list viewer (uiop:native-namestring file)))))
