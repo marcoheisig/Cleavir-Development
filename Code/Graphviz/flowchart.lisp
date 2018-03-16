@@ -28,7 +28,7 @@
 
 (defmethod graphviz-edge-attributes
     ((graph flowchart) (edge edge) from to edge-number)
-  `(:label ,(princ-to-string (1+ edge-number))))
+  `(:label ,(stringify (1+ edge-number))))
 
 (defmethod graphviz-edge-attributes
     ((graph flowchart)

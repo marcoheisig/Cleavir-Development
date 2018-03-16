@@ -44,7 +44,7 @@
 
 (defmethod graphviz-node-properties append
     ((graph cst) (cst cst:atom-cst))
-  `(("value" . ,(princ-to-string (cst:raw cst)))))
+  `(("value" . ,(stringify (cst:raw cst)))))
 
 (defmethod graphviz-potential-edges append
     ((graph cst) (node cst:cons-cst))

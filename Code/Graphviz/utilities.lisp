@@ -2,6 +2,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
+;;; Conversion of Lisp Data to Strings
+
+(defun stringify (x)
+  (with-standard-io-syntax
+    (princ-to-string x)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
 ;;; HTML Labels
 ;;;
 ;;; Graphviz allows label specifications in a small subset of HTML. The

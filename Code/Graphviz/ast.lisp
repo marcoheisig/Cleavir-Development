@@ -22,7 +22,7 @@
 
 (defmethod graphviz-edge-attributes
     ((graph ast) (edge ast-edge) from to edge-number)
-  (let ((label (princ-to-string (1+ edge-number))))
+  (let ((label (stringify (1+ edge-number))))
     `(:label ,label)))
 
 (defmethod graphviz-node-caption
@@ -41,7 +41,7 @@
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:constant-ast))
-  `(("value" . ,(princ-to-string (cleavir-ast:value ast)))))
+  `(("value" . ,(stringify (cleavir-ast:value ast)))))
 
 (defmethod graphviz-node-attributes
     ((graph ast) (ast cleavir-ast:constant-ast))
@@ -51,7 +51,7 @@
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:lexical-ast))
-  `(("name" . ,(princ-to-string (cleavir-ast:name ast)))))
+  `(("name" . ,(stringify (cleavir-ast:name ast)))))
 
 (defmethod graphviz-node-attributes
     ((graph ast) (ast cleavir-ast:lexical-ast))
@@ -61,19 +61,19 @@
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:tag-ast))
-  `(("name" . ,(princ-to-string (cleavir-ast:name ast)))))
+  `(("name" . ,(stringify (cleavir-ast:name ast)))))
 
 ;;; TOP-LEVEL-FUNCTION-AST Attributes
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:top-level-function-ast))
-  `(("forms" . ,(princ-to-string (cleavir-ast:forms ast)))))
+  `(("forms" . ,(stringify (cleavir-ast:forms ast)))))
 
 ;;; LOAD-TIME-VALUE-AST Attributes
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:load-time-value-ast))
-  `(("form" . ,(princ-to-string (cleavir-ast:form ast)))))
+  `(("form" . ,(stringify (cleavir-ast:form ast)))))
 
 (defmethod graphviz-node-attributes
     ((graph ast) (ast cleavir-ast:load-time-value-ast))
@@ -89,9 +89,9 @@
 
 (defmethod graphviz-node-properties append
     ((graph ast) (ast cleavir-ast:the-ast))
-  `(("required-types" . ,(princ-to-string (cleavir-ast:required-types ast)))
-    ("optional-types" . ,(princ-to-string (cleavir-ast:optional-types ast)))
-    ("rest-type" . ,(princ-to-string (cleavir-ast:rest-type ast)))))
+  `(("required-types" . ,(stringify (cleavir-ast:required-types ast)))
+    ("optional-types" . ,(stringify (cleavir-ast:optional-types ast)))
+    ("rest-type" . ,(stringify (cleavir-ast:rest-type ast)))))
 
 ;;; FLOAT-AST Attributes
 
