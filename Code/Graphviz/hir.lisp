@@ -76,7 +76,7 @@
 ;;; ENCLOSE-INSTRUCTION
 
 (defmethod graphviz-potential-edges append
-    ((graph flowchart) (node cleavir-ir:enclose-instruction))
+    ((graph flowchart) (instruction cleavir-ir:enclose-instruction))
   (list (make-instance 'pink-edge)))
 
 (defmethod graphviz-incoming-edge-origins
@@ -86,7 +86,7 @@
 ;;; UNWIND-INSTRUCTION
 
 (defmethod graphviz-potential-edges append
-    ((graph flowchart) (node cleavir-ir:unwind-instruction))
+    ((graph flowchart) (instruction cleavir-ir:unwind-instruction))
   (list (make-instance 'pink-edge)))
 
 (defmethod graphviz-incoming-edge-origins
@@ -118,3 +118,35 @@
         (cons
          (format nil "form-~D" index)
          (stringify form))))
+
+;;; THE-INSTRUCTION
+
+(defmethod graphviz-node-properties append
+    ((graph flowchart) (instruction cleavir-ir:the-instruction))
+  `(("value-type" . ,(stringify (cleavir-ir:value-type instruction)))))
+
+;;; THE-VALUES-INSTRUCTION
+
+(defmethod graphviz-node-properties append
+    ((graph flowchart) (instruction cleavir-ir:the-values-instruction))
+  `(("required-types" . ,(stringify (cleavir-ir:required-types instruction)))
+    ("optional-types" . ,(stringify (cleavir-ir:optional-types instruction)))
+    ("rest-type" . ,(stringify (cleavir-ir:rest-type instruction)))))
+
+;;; TYPEQ-INSTRUCTION
+
+(defmethod graphviz-node-properties append
+    ((graph flowchart) (instruction cleavir-ir:typeq-instruction))
+  `(("value-type" . ,(stringify (cleavir-ir:value-type instruction)))))
+
+;;; BOX-INSTRUCTION
+
+(defmethod graphviz-node-properties append
+    ((graph flowchart) (instruction cleavir-ir:box-instruction))
+  `(("element-type" . ,(stringify (cleavir-ir:element-type instruction)))))
+
+;;; UNBOX-INSTRUCTION
+
+(defmethod graphviz-node-properties append
+    ((graph flowchart) (instruction cleavir-ir:unbox-instruction))
+  `(("element-type" . ,(stringify (cleavir-ir:element-type instruction)))))

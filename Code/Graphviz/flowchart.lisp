@@ -20,7 +20,8 @@
 (defmethod graphviz-node-attributes
     ((graph flowchart) node)
   '(:shape :box
-    :style :filled))
+    :style :filled
+    :fillcolor :white))
 
 (defmethod graphviz-node-attributes
     ((graph flowchart) (datum cleavir-ir:datum))
