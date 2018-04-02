@@ -1,0 +1,71 @@
+#+TITLE: The treatment of LOAD-TIME-VALUE forms in Cleavir
+
+* Introduction
+The LOAD-TIME-VALUE special form has been added to Common Lisp in 1989.
+The following sections of the Hyperspec describe the rationale and behavior
+of this special form:
+- [[http://www.lispworks.com/documentation/HyperSpec/Body/s_ld_tim.htm]]
+- [[http://www.lispworks.com/documentation/HyperSpec/Body/03_bbb.htm]]
+- http://www.lispworks.com/documentation/HyperSpec/Issues/iss216_w.htm
+
+For the remaining discussion, we will always assume the LOAD-TIME-VALUE
+form is processed by the file compiler.  The other modes of processing ---
+EVAL and COMPILE --- are trivially handled by evaluating the form directly
+in a null lexical environment and using the resulting value.
+
+The designer of a Common Lisp compiler faces several challenges.
+1. The value of the LOAD-TIME-VALUE form may be a constant, either because
+   its second argument is the symbol T, or because the first argument is a
+   literal.
+2. Even if the first argument of a LOAD-TIME-VALUE form is not a literal,
+   it might evaluate to a constant in the sense of CONSTANTP.
+3. Even if the first argument of a LOAD-TIME-VALUE does not evaluate to a
+   constant, the compiler may be able to derive some information about the
+   resulting value.  This can be type information, or the knowledge that
+   the value satisfies a particular test.
+4. A LOAD-TIME-VALUE form may appear in dead code. In this case there is no
+   need to store the form in the FASL at all.
+5. Several LOAD-TIME-VALUE forms may be nested.  In this case, the standard
+   mandates that each form is nevertheless only evaluated once.
+6. Accidental modification of literal constants is a dangerous source of
+   bugs.  A good compiler should attempt to detect and report such code and
+   consequently needs to know about the intricacies of LOAD-TIME-VALUE
+   forms.
+7. Several constant LOAD-TIME-VALUE forms that evaluate to the same
+   constant datum may be coalesced. Some heuristic must be used to detect
+   such equivalent forms, e.g. if they are the same under EQUAL.
+
+The following examples illustrate these issues:
+#+BEGIN_SRC lisp
+;; Obvious constants.
+(load-time-value (string (gensym)) t)
+(load-time-value "abc")
+
+;; A hidden constant.
+(load-time-value (1+ 2))
+
+;; A form with potentially valuable type information.
+(load-time-value (make-array 5))
+
+;; Dead code.
+(when nil (load-time-value '(1 2 3)))
+
+;; Nested LOAD-TIME-VALUE forms.
+(defvar *i* 0)
+(load-time-value
+ (loop repeat 2 sum (load-time-value (incf *i*))))
+
+;; Accidental modification of constant data.
+(fill (load-time-value (list 5) t) 6)
+
+;; Forms a compiler might coalesce.
+'(1 2 3)
+(load-time-value '(1 2 3))
+(load-time-value (list 1 2 3) t)
+#+END_SRC
+* Current Practice
+It is instructive to see how other compilers handle LOAD-TIME-VALUE forms.
+** SBCL
+** CCL
+** ECL
+* A Proposed Solution
