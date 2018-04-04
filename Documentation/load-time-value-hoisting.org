@@ -81,9 +81,27 @@ operator in the Common Lisp package and that it receives either one or two
 arguments.
 ** SBCL
 The implementation of LOAD-TIME-VALUE resides in [[https://github.com/sbcl/sbcl/blob/master/src/compiler/ltv.lisp][src/compiler/ltv.lisp]],
-with some related code in [[https://github.com/sbcl/sbcl/blob/master/src/compiler/dump.lisp][src/compiler/dump.lisp]] and in
-[[https://github.com/sbcl/sbcl/blob/master/src/compiler/generic/genesis.lisp][src/compiler/generic/genesis.lisp]].
+with some related code in [[https://github.com/sbcl/sbcl/blob/master/src/compiler/dump.lisp][src/compiler/dump.lisp]], [[https://github.com/sbcl/sbcl/blob/master/src/compiler/dump.lisp][src/compiler/main.lisp]]
+and [[https://github.com/sbcl/sbcl/blob/master/src/compiler/generic/genesis.lisp][src/compiler/generic/genesis.lisp]].
+
+When translating a LOAD-TIME-VALUE form from source code to IR1, SBCL
+performs the following steps:
+1. An approximate type of the run-time value of the LOAD-TIME-VALUE form is
+   derived.  In particular, SBCL extracts type information if the first
+   argument is a call to a function with type declarations, or a THE,
+   TRULY-THE or FUNCTION special form, or if the first argument form is a
+   variable with type declarations, or a forms that is CONSTANTP.
+2. If the approximate type from the previous step is a subtype of CHARACTER
+   or NUMBER, the second argument form of the LOAD-TIME-VALUE form is
+   automatically converted to T.
+3. The LOAD-TIME-VALUE form is converted to a lambda function, compiled,
+   and placed in the FASL file, such that it is evaluated at load-time. Its
+   occurrence is replaced with a new special operator %LOAD-TIME-VALUE,
+   that later references the vector of constants of this particular
+   component.
+
 ** CCL
 ** ECL
 ** ABCL
 * A Proposed Solution
+** Extraction of type information
