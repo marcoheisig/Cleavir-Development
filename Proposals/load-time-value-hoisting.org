@@ -285,7 +285,7 @@ beach  Great!  Again, there might be something I haven't thought of.
 #+END_QUOTE
 
 * A Proposed Solution
-** During AST creation
+** AST creation
 Instead of storing the first argument of a LOAD-TIME-VALUE form as an
 S-expression, convert it to an AST, too.  One benefit of doing so is that
 syntactic errors are detected earlier.  Another benefit is that it
@@ -301,18 +301,11 @@ following reader methods instead:
 2. READ-ONLY-P -- A boolean that is at least as strict as the second
    argument of the original LOAD-TIME-VALUE form.
 
-** During AST to HIR translation
+** AST to HIR translation
 During AST to HIR translation, each LOAD-TIME-VALUE must be replaced by HIR
- instructions and data.  Clients may want to process a LOAD-TIME-VALUE form
- differently, depending on its value and effects.
-
-When a LOAD-TIME-VALUE form is free of side-effects and the compiler is
-able to prove that the form is never reached, it can be eliminated and we
-need not place it in the FASL file at all.  Such an optimization can only
-be applied very late in the compiler, after the last dead-code-elimination
-pass.  Consequently, forms without side-effects should not be hoisted until
-the very end.  A particularly important case of forms without side-effects
-are literal constants.
+instructions and data.  Each clients may want to process LOAD-TIME-VALUE
+differently.  A solution would be to supply a client object to
+CLEAVIR-AST-TO-HIR:COMPILE-TOPLEVEL and all the COMPILE-AST functions.
 
 It seems there is little a compiler framework such as Cleavir can prescribe
 at this step, except that the result of conversion is a datum, possibly
@@ -329,7 +322,7 @@ provide a FASL protocol and make all interaction explicit.  In the former
 case, a client could e.g. bind a special variable around the machinery of
 the file compiler and specialized methods could access this variable.  In
 the latter case, Cleavir would specify a protocol with operations such as
-MAKE-FASL, ADD-TO-FASL, WRITE-FASL.
+(MAKE-FASL CLIENT), (ADD-TO-FASL FASL THUNK), (WRITE-FASL FILE).
 
 In either case, there needs to be a final compiler transformation that is
 applied to each eachable CONSTANT-INPUT and either turns it into an
@@ -347,3 +340,10 @@ propagating not only the type of a form, but also the run-time
 constantness.  Can we add subtypes to all types of mutable objects,
 e.g. SIMPLE-VECTOR-CONSTANT or CONS-CONSTANT, at least during compilation?
 Some more thought needs to be given to this.
+
+** Summary
+- The %FORM slot of each LOAD-TIME-VALUE-AST is replaced by an %AST slot.
+- COMPILE-TOPLEVEL and COMPILE-AST receive a client object as their last
+  argument (or as their first argument?).
+- Rewrite the primary method for COMPILE-AST on LOAD-TIME-VALUE ASTs.
+- The LOAD-TIME-VALUE related HIR transformations are updated accordingly.
