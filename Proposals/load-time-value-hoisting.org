@@ -111,7 +111,10 @@ The CCL implementation of LOAD-TIME-VALUE resides in
 encounters during COMPILE-FILE by `(#:load-time-eval '(funcall ,(compile
 nil `(lambda () ,form)))).
 ** ECL
-** ABCL
+The ECL handling of LOAD-TIME-VALUE happens in [[https://gitlab.com/embeddable-common-lisp/ecl/blob/develop/src/cmp/cmptop.lsp][src/cmp/cmptop.lisp]].  During
+COMPILE-FILE, all occurring LOAD-TIME-VALUE forms are translated to ECL's
+intermediate representation (c1form) and pushed to a special variable.
+
 ** Cleavir (as of Q1 2018)
 - The first argument of a LOAD-TIME-VALUE form is not processed further and
   stored as an S-expression.

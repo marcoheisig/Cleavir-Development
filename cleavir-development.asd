@@ -7,7 +7,9 @@
                "cl-dot"
                "concrete-syntax-tree"
                "cleavir-ast"
-               "cleavir-ir")
+               "cleavir-ir"
+               "cleavir-hir"
+               "cleavir-mir")
   :components
   ((:module "Code"
     :serial t
