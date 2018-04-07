@@ -302,9 +302,9 @@ following reader methods instead:
    argument of the original LOAD-TIME-VALUE form.
 
 ** During AST to HIR translation
-This is the moment, where each LOAD-TIME-VALUE form is replaced by
-potentially client dependent HIR statements.  Clients may want to process a
-form differently, depending on its value and effects.
+During AST to HIR translation, each LOAD-TIME-VALUE must be replaced by HIR
+ instructions and data.  Clients may want to process a LOAD-TIME-VALUE form
+ differently, depending on its value and effects.
 
 When a LOAD-TIME-VALUE form is free of side-effects and the compiler is
 able to prove that the form is never reached, it can be eliminated and we
