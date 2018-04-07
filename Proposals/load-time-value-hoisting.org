@@ -303,17 +303,20 @@ following reader methods instead:
 
 ** AST to HIR translation
 During AST to HIR translation, each LOAD-TIME-VALUE must be replaced by HIR
-instructions and data.  Each clients may want to process LOAD-TIME-VALUE
+instructions and data.  Each client may want to process LOAD-TIME-VALUE
 differently.  A solution would be to supply a client object to
 CLEAVIR-AST-TO-HIR:COMPILE-TOPLEVEL and all the COMPILE-AST functions.
 
+*Important*: If a client processes a form with side-effects, it needs to
+keep a reference to this form or dump it immediately to a FASL.  Otherwise,
+the form may be lost when its containing code is eliminated by some other
+compiler transformation.
+
 It seems there is little a compiler framework such as Cleavir can prescribe
 at this step, except that the result of conversion is a datum, possibly
-wrapped in a THE-INSTRUCTION.
-
-Cleavir could however provide a default implementation. The exact nature of
-this default implementation depends on the way FASLs are handled by
-Cleavir.
+wrapped in a THE-INSTRUCTION.  Cleavir could however provide a default
+implementation similar to that of SBCL. However, the exact nature of this
+default implementation depends on the way FASLs are handled by Cleavir.
 
 ** FASL dumping
 The primary question here is whether the FASL should be created as an
@@ -325,7 +328,7 @@ the latter case, Cleavir would specify a protocol with operations such as
 (MAKE-FASL CLIENT), (ADD-TO-FASL FASL THUNK), (WRITE-FASL FILE).
 
 In either case, there needs to be a final compiler transformation that is
-applied to each eachable CONSTANT-INPUT and either turns it into an
+applied to each reachable CONSTANT-INPUT and either turns it into an
 IMMEDIATE-INPUT or to a reference to a value in the FASL.  Most
 importantly, this mechanism must hoist all compiled thunks of what used to
 be LOAD-TIME-VALUE forms.
