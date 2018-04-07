@@ -292,8 +292,17 @@ syntactic errors are detected earlier.  Another benefit is that it
 simplifies the compiler logic in that the AST conversion is only performed
 once and not at multiple times during a single compilation.
 
+** Different types of IR data
+Currently, LOAD-TIME-VALUE-INPUT instances store the source form and the
+read-only boolean.  The new LOAD-TIME-VALUE-INPUT datum should have the
+following reader methods instead:
+1. HANDLE -- A client-supplied object, e.g. an integer denoting the
+   location of the value in the FASL or a thunk.
+2. READ-ONLY-P -- A boolean that is at least as strict as the second
+   argument of the original LOAD-TIME-VALUE form.
+
 ** During AST to HIR translation
-This is the crucial moment, where each LOAD-TIME-VALUE form is replaced by
+This is the moment, where each LOAD-TIME-VALUE form is replaced by
 potentially client dependent HIR statements.  Clients may want to process a
 form differently, depending on its value and effects.
 
@@ -309,14 +318,11 @@ It seems there is little a compiler framework such as Cleavir can prescribe
 at this step, except that the result of conversion is a datum, possibly
 wrapped in a THE-INSTRUCTION.
 
-Cleavir could however provide a default implementation. Such an
-implementation could use the function CONSTANTP of the compilation
-environment, or some function AST-CONSTANTP, to determine whether the
-result is an instance of CONSTANT-INPUT.  Otherwise, it could convert the
-form to a thunk, compile it and turn it into a THE-INSTRUCTION, whose input
-is a FUNCALL-INSTRUCTION, whose input is the compiled thunk.
+Cleavir could however provide a default implementation. The exact nature of
+this default implementation depends on the way FASLs are handled by
+Cleavir.
 
-** During FASL dumping
+** FASL dumping
 The primary question here is whether the FASL should be created as an
 invisible side-effect of the Cleavir compilation or whether we want to
 provide a FASL protocol and make all interaction explicit.  In the former
