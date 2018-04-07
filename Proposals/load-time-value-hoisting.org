@@ -292,7 +292,7 @@ syntactic errors are detected earlier.  Another benefit is that it
 simplifies the compiler logic in that the AST conversion is only performed
 once and not at multiple times during a single compilation.
 
-** Different types of IR data
+** Changing the structure of LOAD-TIME-VALUE-INPUT
 Currently, LOAD-TIME-VALUE-INPUT instances store the source form and the
 read-only boolean.  The new LOAD-TIME-VALUE-INPUT datum should have the
 following reader methods instead:
@@ -315,8 +315,9 @@ code is eliminated by some other compiler transformation.
 It seems there is little a compiler framework such as Cleavir can prescribe
 at this step, except that the result of conversion is a datum, possibly
 wrapped in a THE-INSTRUCTION.  Cleavir could however provide a default
-implementation similar to that of SBCL. However, the exact nature of this
-default implementation depends on the way FASLs are handled by Cleavir.
+implementation similar to that of SBCL, using CONSTANTP. However, the exact
+nature of this default implementation depends on the way FASLs are handled
+by Cleavir.
 
 ** FASL dumping
 The primary question here is whether the FASL should be created as an
