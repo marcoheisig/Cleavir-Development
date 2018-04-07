@@ -346,8 +346,8 @@ e.g. SIMPLE-VECTOR-CONSTANT or CONS-CONSTANT, at least during compilation?
 Some more thought needs to be given to this.
 
 ** Summary
-- The %FORM slot of each LOAD-TIME-VALUE-AST is replaced by an %AST slot.
-- COMPILE-TOPLEVEL and COMPILE-AST receive a client object as their last
-  argument (or as their first argument?).
-- Rewrite the primary method for COMPILE-AST on LOAD-TIME-VALUE ASTs.
-- The LOAD-TIME-VALUE related HIR transformations are updated accordingly.
+- Replace the %FORM slot of each LOAD-TIME-VALUE-AST by an %AST slot.
+- Modify COMPILE-TOPLEVEL and COMPILE-AST to receive a client object as
+  their last argument (or as their first argument?).
+- Rewrite the primary method of COMPILE-AST on LOAD-TIME-VALUE ASTs.
+- Update the LOAD-TIME-VALUE related HIR transformations accordingly.
