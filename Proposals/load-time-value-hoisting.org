@@ -307,10 +307,10 @@ instructions and data.  Each client may want to process LOAD-TIME-VALUE
 differently.  A solution would be to supply a client object to
 CLEAVIR-AST-TO-HIR:COMPILE-TOPLEVEL and all the COMPILE-AST functions.
 
-*Important*: If a client processes a form with side-effects, it needs to
-keep a reference to this form or dump it immediately to a FASL.  Otherwise,
-the form may be lost when its containing code is eliminated by some other
-compiler transformation.
+*Important*: If a client processes a LOAD-TIME-VALUE form with
+side-effects, it needs to keep a reference to this form or dump it
+immediately to a FASL.  Otherwise, the form may be lost when its containing
+code is eliminated by some other compiler transformation.
 
 It seems there is little a compiler framework such as Cleavir can prescribe
 at this step, except that the result of conversion is a datum, possibly
