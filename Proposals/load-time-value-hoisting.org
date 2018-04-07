@@ -139,75 +139,145 @@ turn them into LOAD-TIME-VALUE calls.
 ** From the #clasp IRC, 18.3.2018 12:54
 #+BEGIN_QUOTE
 heisig Hello beach, do you have a moment to talk about load-time-value forms?
+
 heisig Just to check whether my thinking is correct.
+
 beach  Sure.
+
 heisig The current approach is to move each load-time-value for to a suitable top-level-enter-instruction.
+
 beach  Yes, that's right.
+
 beach  And it is done at the AST level.
+
 heisig The downside is that this prevents optimization of that form.
+
 heisig So no type information
+
 heisig And it cannot be turned into a constant.
+
 beach  Optimizing that form is probably not important, but the type information is lost so that other forms can not be optimized.
+
 beach  And we can't do constant propagation.
+
 heisig So the more sensible approach would be to recursively invoke a specialized, implementation dependent version of the compiler on each load-time-value form, turning it either into an immediate AST, or into a (truly-the (load-time-value FOO)) form.
+
 beach  OK, slow down a bit... :)
+
 beach  That is an orthogonal issue.
+
 beach  In the file compiler, LOAD-TIME-VALUEs need to be broken down to something that the implementation can handle from a FASL file.
+
 Bike   with the way hoisting works in sicl, it should turn (lambda () (load-time value ...)) into ((lambda (x) (lambda () x)) ...), so type inference ought to work normally on that
+
 beach  Some implementations can handle fairly complex forms, whereas others, like SICL, can handle only very primitive ones.
+
 beach  heisig: The first issue we need to deal with is to move the hoisting from the AST level to the HIR level.
+
 heisig I already found some code for that in HIR-transformations/eliminate-load-time-values.lisp.
+
 heisig That is why I am asking.
+
 Bike   yeah, in clasp we actually kind of hoist twice now... bit silly
+
 beach  Yes, I think it used to be done that way, but for some reason I changed it so that it is now done at the AST level.
+
 heisig I think it makes sense to host twice.
+
 Bike   i think it just had load time value instructions, though, which have forms
+
 heisig *hoist
+
 Bike   which is wrong
+
 Bike   why twice?
+
 heisig The first time, you hoist all load-time-value forms that are not constants.
+
 heisig The second time, you hoist all constants that are not immediates.
+
 beach  A LOAD-TIME-VALUE HIR instruction should probably not have a form in it, but an AST.
+
 beach  I would say this: Keep constants as they are in the AST, and have a LOAD-TIME-VALUE-AST that has an AST in it.
+
 beach  Then turn all that into HIR, probably keeping the AST in the LOAD-TIME-VALUE instruction.
+
 beach  Then do optimizations including constant propagation.
+
 beach  Finally, turn non-immediate constants into LOAD-TIME-VALUEs, hoist all that stuff, and apply the specialized compiler to the ASTs in the LOAD-TIME-VALUE instructions.
+
 beach  But I am doing this from memory, so I might be wrong.
+
 heisig That seems reasonable. But in my (limited) understanding, there is no flow of information from the outside world into the load-time-value form, so you can actually do all that processing as early as during the AST generation of the original form.
+
 heisig But admittedly, this is a future issue.
+
 beach  Except that constants might disappear or get introduced in the HIR step, so you would still have new LOAD-TIME-VALUE ASTs to process later.
+
 beach  Imagine (let* ((x '(a b c)) (y (car x))) ...)
+
 beach  It is entirely possible that some HIR transformation determines that the value of X is A, but that won't be obvious when the AST is created.
+
 beach  That the value of Y is A. 
+
 beach  Sorry.
+
 Bike   what about (let* ((x '(#.(make-instance ...))) (y (car x))) ...)? to get the load form we'd need to call make-load-form, which needs an environment.
+
 beach  I haven't thought about it.
+
 heisig Bike: Good point.
+
 beach  Bike: Are you saying we need to keep the environment after AST generation?
+
 Bike   i'm saying we don't want to need that, so we should tread carefully, is all
+
 beach  Yeah, I'll grant you that.
+
 heisig I don't think so. This environment is just the lexical environment of the subform of the load-time-value.
+
 heisig I guess.
+
 Bike   lexical? don't need lexical stuff for load time values.
+
 beach  It's the compilation global environment, right?
+
 beach  global compilation environment
+
 heisig CLHS make-load-form: 'Environment is an environment object corresponding to the lexical environment in which the forms will be processed.'
+
 beach  Hmm, OK.
+
 Bike   well, other thought, we shouldn't use make load form anyway
+
 Bike   we should have our own function that the client can specialize
+
 Bike   have it take a system argument maybe
+
 Bike   e.g. so that it can cross compile
+
 heisig It seems the conservative choice would be to apply, during AST creation, an implementation dependent compiler to the load-time-value form and either receive a constant, or a typed reference to some implementation dependent object...
+
 beach  That object would be an AST, no?
+
 heisig Not necessarily. I think Cleavir would never have to touch it again. It is just something used to emit the fasl later on. At least this is my thinking at the moment.
+
 beach  heisig: But then you might do things twice, won't you?
+
 beach  Like I said, at the HIR level, constants might be taken apart or created, and then you would have to do the entire thing over again.
+
 heisig Hmm. Thinking...
+
 beach  That is why I suggested leaving the ASTs in there, until (after HIR processing) it has been determined which constants remain, and which of those must be turned into LOAD-TIME-VALUEs.
+
 heisig Ah, I see. You want to avoid creating load-time-values that are never used.
+
 beach  Yes.
+
 beach  And also leave the constants in there as long as possible so that HIR transformations can examine them.
+
 heisig Ok, I think I finally understood the whole problem.
+
 beach  Great!  Again, there might be something I haven't thought of.
 #+END_QUOTE
 
