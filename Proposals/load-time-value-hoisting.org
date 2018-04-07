@@ -1,0 +1,269 @@
+#+TITLE: The treatment of LOAD-TIME-VALUE forms in Cleavir
+
+* Introduction
+The LOAD-TIME-VALUE special form has been added to Common Lisp in 1989 as a
+replacement of the dysfunctional sharpsign comma reader macro.  The history
+and semantics of the form are described in the following sections of the
+Hyperspec:
+- [[http://www.lispworks.com/documentation/HyperSpec/Body/s_ld_tim.htm]]
+- [[http://www.lispworks.com/documentation/HyperSpec/Body/03_bbb.htm]]
+- http://www.lispworks.com/documentation/HyperSpec/Issues/iss216_w.htm
+
+For the remaining discussion, we will always assume the LOAD-TIME-VALUE
+form is processed by the file compiler.  The other modes of processing ---
+EVAL and COMPILE --- are trivially handled by evaluating the form directly
+in a null lexical environment and replacing its use with the resulting
+value.
+
+Several challenges arise for a compiler writer when dealing with
+LOAD-TIME-VALUE forms:
+1. The value of the LOAD-TIME-VALUE form may be a compile-time constant,
+   either because because the first argument is a literal, or because the
+   first argument evaluates to a constant in the sense of CONSTANTP.
+2. Even if the LOAD-TIME-VALUE form is not a compile-time constant, its
+   value can be treated like an immutable constant whenever the second
+   argument is the symbol T.
+3. Even if the first argument of a LOAD-TIME-VALUE form does not evaluate
+   to a constant, the compiler may be able to derive some knowledge about
+   the resulting value, e.g. type information.
+4. A LOAD-TIME-VALUE form may appear in dead code.  If, additionally the
+   form is free of side-effects, there is no need to store the form in the
+   FASL at all.
+5. Several LOAD-TIME-VALUE forms may be nested.  In this case, the standard
+   mandates that each form is nevertheless only evaluated once and at
+   load-time.
+6. Accidental modification of literal constants is a dangerous source of
+   bugs.  A good compiler should attempt to detect and report such code and
+   consequently needs to know about the intricacies of LOAD-TIME-VALUE
+   forms.
+7. Several constant LOAD-TIME-VALUE forms that evaluate to the same
+   constant datum may be coalesced. Some heuristic must be used to detect
+   such equivalent forms, e.g. if they are the same under EQUAL.
+
+The following examples illustrate these issues:
+#+BEGIN_SRC lisp
+;; Obvious constants.
+(load-time-value "abc")
+(load-time-value #C(1 2))
+
+;; A hidden constant.
+(load-time-value (1+ 2))
+
+;; A constant, but not a compile-time constant.
+(load-time-value (string (gensym)) t)
+
+;; A form with potentially valuable type information.
+(load-time-value (make-array 5))
+
+;; Dead code.
+(when nil (load-time-value '(1 2 3)))
+
+;; Dead code with side-effects.
+(defvar *n*)
+(when nil (load-time-value (incf *n*)))
+
+;; Nested LOAD-TIME-VALUE forms.
+(defvar *i* 0)
+(load-time-value
+ (loop repeat 2 sum (load-time-value (incf *i*))))
+
+;; Accidental modification of constant data. Users will appreciate compiler
+;; warnings for such code.
+(fill (load-time-value (list 5) t) 6)
+
+;; Forms a compiler may want to coalesce.
+'(1 2 3)
+(load-time-value '(1 2 3))
+(load-time-value (list 1 2 3) t)
+#+END_SRC
+
+* Current Practice
+It is instructive to see how LOAD-TIME-VALUE forms are handled elsewhere in
+the Common Lisp community.
+** ANSI Test Suite
+The ANSI test suite contains no dedicated tests for LOAD-TIME-VALUE forms.
+It merely asserts that the corresponding symbol is bound to a special
+operator in the Common Lisp package and that it receives either one or two
+arguments.
+** SBCL
+The SBCL implementation of LOAD-TIME-VALUE resides in
+[[https://github.com/sbcl/sbcl/blob/master/src/compiler/ltv.lisp][src/compiler/ltv.lisp]], with some related code in [[https://github.com/sbcl/sbcl/blob/master/src/compiler/dump.lisp][src/compiler/dump.lisp]],
+[[https://github.com/sbcl/sbcl/blob/master/src/compiler/dump.lisp][src/compiler/main.lisp]] and [[https://github.com/sbcl/sbcl/blob/master/src/compiler/generic/genesis.lisp][src/compiler/generic/genesis.lisp]].
+
+When translating a LOAD-TIME-VALUE form from source code to IR1, SBCL
+performs the following steps:
+1. An approximate type of the run-time value of the LOAD-TIME-VALUE form is
+   derived.  In particular, SBCL extracts type information if the first
+   argument is a call to a function with type declarations, or a THE,
+   TRULY-THE or FUNCTION special form, or if the first argument form is a
+   variable with type declarations, or if it is a form that is CONSTANTP.
+2. If the approximate type from the previous step is a subtype of CHARACTER
+   or NUMBER, the second argument form of the LOAD-TIME-VALUE form is
+   automatically converted to T.
+3. The LOAD-TIME-VALUE form is converted to a lambda function, compiled,
+   and placed in the FASL file, such that it is evaluated at load-time. Its
+   occurrence is replaced with a new special operator %LOAD-TIME-VALUE,
+   that later references the vector of constants of this particular
+   component.
+** CCL
+The CCL implementation of LOAD-TIME-VALUE resides in
+[[https://github.com/Clozure/ccl/blob/master/compiler/nx1.lisp][compiler/nx1.lisp]]. Essentially, CCL replaces each (load-time-value form) it
+encounters during COMPILE-FILE by `(#:load-time-eval '(funcall ,(compile
+nil `(lambda () ,form)))).
+** ECL
+** ABCL
+** Cleavir (as of Q1 2018)
+- The first argument of a LOAD-TIME-VALUE form is not processed further and
+  stored as an S-expression.
+- An AST transformation hoists all LOAD-TIME-VALUE forms.  As a result,
+  these forms are never seen by subsequent transformations like HIR
+  transformation and optimization.  The hoisted expressions are later
+  passed as arguments to the current top-level function.  It is not clear
+  how this mechanism works in the case of nested LOAD-TIME-VALUE forms.
+- All non-immediate constants are currently converted to LOAD-TIME-VALUE
+  forms.  This has the benefit that they are automatically hoisted during
+  FASL dumping, but prevents many optimizations.
+* Discussion
+** From the Cleavir documentation (projects.txt):
+#+BEGIN_QUOTE
+I would like to experiment with doing certain transformations at
+different times.  For example, right now, non-trivial constants are
+turned into LOAD-TIME-VALUE forms when the AST is created.  I would
+like to have the option of leaving constants in the AST and process
+them at the HIR level, so that type inference, constant propagation,
+value numbering, etc., can use the information in constants.  There
+must then be a HIR transformation that takes remaining constants and
+turn them into LOAD-TIME-VALUE calls.
+#+END_QUOTE
+
+** From the #clasp IRC, 18.3.2018 12:54
+#+BEGIN_QUOTE
+heisig Hello beach, do you have a moment to talk about load-time-value forms?
+heisig Just to check whether my thinking is correct.
+beach  Sure.
+heisig The current approach is to move each load-time-value for to a suitable top-level-enter-instruction.
+beach  Yes, that's right.
+beach  And it is done at the AST level.
+heisig The downside is that this prevents optimization of that form.
+heisig So no type information
+heisig And it cannot be turned into a constant.
+beach  Optimizing that form is probably not important, but the type information is lost so that other forms can not be optimized.
+beach  And we can't do constant propagation.
+heisig So the more sensible approach would be to recursively invoke a specialized, implementation dependent version of the compiler on each load-time-value form, turning it either into an immediate AST, or into a (truly-the (load-time-value FOO)) form.
+beach  OK, slow down a bit... :)
+beach  That is an orthogonal issue.
+beach  In the file compiler, LOAD-TIME-VALUEs need to be broken down to something that the implementation can handle from a FASL file.
+Bike   with the way hoisting works in sicl, it should turn (lambda () (load-time value ...)) into ((lambda (x) (lambda () x)) ...), so type inference ought to work normally on that
+beach  Some implementations can handle fairly complex forms, whereas others, like SICL, can handle only very primitive ones.
+beach  heisig: The first issue we need to deal with is to move the hoisting from the AST level to the HIR level.
+heisig I already found some code for that in HIR-transformations/eliminate-load-time-values.lisp.
+heisig That is why I am asking.
+Bike   yeah, in clasp we actually kind of hoist twice now... bit silly
+beach  Yes, I think it used to be done that way, but for some reason I changed it so that it is now done at the AST level.
+heisig I think it makes sense to host twice.
+Bike   i think it just had load time value instructions, though, which have forms
+heisig *hoist
+Bike   which is wrong
+Bike   why twice?
+heisig The first time, you hoist all load-time-value forms that are not constants.
+heisig The second time, you hoist all constants that are not immediates.
+beach  A LOAD-TIME-VALUE HIR instruction should probably not have a form in it, but an AST.
+beach  I would say this: Keep constants as they are in the AST, and have a LOAD-TIME-VALUE-AST that has an AST in it.
+beach  Then turn all that into HIR, probably keeping the AST in the LOAD-TIME-VALUE instruction.
+beach  Then do optimizations including constant propagation.
+beach  Finally, turn non-immediate constants into LOAD-TIME-VALUEs, hoist all that stuff, and apply the specialized compiler to the ASTs in the LOAD-TIME-VALUE instructions.
+beach  But I am doing this from memory, so I might be wrong.
+heisig That seems reasonable. But in my (limited) understanding, there is no flow of information from the outside world into the load-time-value form, so you can actually do all that processing as early as during the AST generation of the original form.
+heisig But admittedly, this is a future issue.
+beach  Except that constants might disappear or get introduced in the HIR step, so you would still have new LOAD-TIME-VALUE ASTs to process later.
+beach  Imagine (let* ((x '(a b c)) (y (car x))) ...)
+beach  It is entirely possible that some HIR transformation determines that the value of X is A, but that won't be obvious when the AST is created.
+beach  That the value of Y is A. 
+beach  Sorry.
+Bike   what about (let* ((x '(#.(make-instance ...))) (y (car x))) ...)? to get the load form we'd need to call make-load-form, which needs an environment.
+beach  I haven't thought about it.
+heisig Bike: Good point.
+beach  Bike: Are you saying we need to keep the environment after AST generation?
+Bike   i'm saying we don't want to need that, so we should tread carefully, is all
+beach  Yeah, I'll grant you that.
+heisig I don't think so. This environment is just the lexical environment of the subform of the load-time-value.
+heisig I guess.
+Bike   lexical? don't need lexical stuff for load time values.
+beach  It's the compilation global environment, right?
+beach  global compilation environment
+heisig CLHS make-load-form: 'Environment is an environment object corresponding to the lexical environment in which the forms will be processed.'
+beach  Hmm, OK.
+Bike   well, other thought, we shouldn't use make load form anyway
+Bike   we should have our own function that the client can specialize
+Bike   have it take a system argument maybe
+Bike   e.g. so that it can cross compile
+heisig It seems the conservative choice would be to apply, during AST creation, an implementation dependent compiler to the load-time-value form and either receive a constant, or a typed reference to some implementation dependent object...
+beach  That object would be an AST, no?
+heisig Not necessarily. I think Cleavir would never have to touch it again. It is just something used to emit the fasl later on. At least this is my thinking at the moment.
+beach  heisig: But then you might do things twice, won't you?
+beach  Like I said, at the HIR level, constants might be taken apart or created, and then you would have to do the entire thing over again.
+heisig Hmm. Thinking...
+beach  That is why I suggested leaving the ASTs in there, until (after HIR processing) it has been determined which constants remain, and which of those must be turned into LOAD-TIME-VALUEs.
+heisig Ah, I see. You want to avoid creating load-time-values that are never used.
+beach  Yes.
+beach  And also leave the constants in there as long as possible so that HIR transformations can examine them.
+heisig Ok, I think I finally understood the whole problem.
+beach  Great!  Again, there might be something I haven't thought of.
+#+END_QUOTE
+
+* A Proposed Solution
+** During AST creation
+Instead of storing the first argument of a LOAD-TIME-VALUE form as an
+S-expression, convert it to an AST, too.  One benefit of doing so is that
+syntactic errors are detected earlier.  Another benefit is that it
+simplifies the compiler logic in that the AST conversion is only performed
+once and not at multiple times during a single compilation.
+
+** During AST to HIR translation
+This is the crucial moment, where each LOAD-TIME-VALUE form is replaced by
+potentially client dependent HIR statements.  Clients may want to process a
+form differently, depending on its value and effects.
+
+When a LOAD-TIME-VALUE form is free of side-effects and the compiler is
+able to prove that the form is never reached, it can be eliminated and we
+need not place it in the FASL file at all.  Such an optimization can only
+be applied very late in the compiler, after the last dead-code-elimination
+pass.  Consequently, forms without side-effects should not be hoisted until
+the very end.  A particularly important case of forms without side-effects
+are literal constants.
+
+It seems there is little a compiler framework such as Cleavir can prescribe
+at this step, except that the result of conversion is either a datum,
+possibly wrapped in a THE-INSTRUCTION.
+
+Cleavir could however provide a default implementation. Such an
+implementation could use the function CONSTANTP of the compilation
+environment, or some function AST-CONSTANTP, to determine whether the
+result is an instance of CONSTANT-INPUT or a THE-INSTRUCTION around a call
+to a literal function (as CONSTANT-INPUT?) that is the result of compiling
+the argument form.
+
+** During FASL dumping
+The primary question here is whether the FASL should be created as an
+invisible side-effect of the Cleavir compilation or whether we want to
+provide a FASL protocol and make all interaction explicit.  In the former
+case, a client could e.g. bind a special variable around the machinery of
+the file compiler and specialized methods could access this variable.  In
+the latter case, Cleavir would specify a protocol with operations such as
+MAKE-FASL, ADD-TO-FASL, WRITE-FASL.
+
+In either case, there needs to be a final compiler transformation that is
+applied to each eachable CONSTANT-INPUT and either turns it into an
+IMMEDIATE-INPUT or to a reference to a value in the FASL.  There is
+probably no need for IMMEDIATE-INPUT data prior to this steap.
+
+** Tracking of run-time constants
+By using LOAD-TIME-VALUE with a second argument of T, it is possible to
+create constant objects at load-time.  Additionally, each compile-time
+constant is also a run-time constant.  It seems worthwhile to track the
+knowledge about such run-time constants during compilation, in order to
+warn the programmer of accidental mutation.  This could be achieved by
+propagating not only the type of a form, but also the run-time
+constantness.  Can we add subtypes to all types of mutable objects,
+e.g. SIMPLE-VECTOR-CONSTANT or CONS-CONSTANT, at least during compilation?
+Some more thought needs to be given to this.

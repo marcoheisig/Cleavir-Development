@@ -3,8 +3,7 @@
 (defgeneric convert-to-hir (object))
 
 (defmethod convert-to-hir ((ast cleavir-ast:ast))
-  (cleavir-ast-to-hir:compile-toplevel
-   (cleavir-ast-transformations:hoist-load-time-value ast)))
+  (cleavir-ast-to-hir:compile-toplevel-unhoisted ast))
 
 (defmethod convert-to-hir ((object t))
   (convert-to-hir
