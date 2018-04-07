@@ -303,15 +303,15 @@ the very end.  A particularly important case of forms without side-effects
 are literal constants.
 
 It seems there is little a compiler framework such as Cleavir can prescribe
-at this step, except that the result of conversion is either a datum,
-possibly wrapped in a THE-INSTRUCTION.
+at this step, except that the result of conversion is a datum, possibly
+wrapped in a THE-INSTRUCTION.
 
 Cleavir could however provide a default implementation. Such an
 implementation could use the function CONSTANTP of the compilation
 environment, or some function AST-CONSTANTP, to determine whether the
-result is an instance of CONSTANT-INPUT or a THE-INSTRUCTION around a call
-to a literal function (as CONSTANT-INPUT?) that is the result of compiling
-the argument form.
+result is an instance of CONSTANT-INPUT.  Otherwise, it could convert the
+form to a thunk, compile it and turn it into a THE-INSTRUCTION, whose input
+is a FUNCALL-INSTRUCTION, whose input is the compiled thunk.
 
 ** During FASL dumping
 The primary question here is whether the FASL should be created as an
@@ -324,8 +324,9 @@ MAKE-FASL, ADD-TO-FASL, WRITE-FASL.
 
 In either case, there needs to be a final compiler transformation that is
 applied to each eachable CONSTANT-INPUT and either turns it into an
-IMMEDIATE-INPUT or to a reference to a value in the FASL.  There is
-probably no need for IMMEDIATE-INPUT data prior to this steap.
+IMMEDIATE-INPUT or to a reference to a value in the FASL.  Most
+importantly, this mechanism must hoist all compiled thunks of what used to
+be LOAD-TIME-VALUE forms.
 
 ** Tracking of run-time constants
 By using LOAD-TIME-VALUE with a second argument of T, it is possible to
