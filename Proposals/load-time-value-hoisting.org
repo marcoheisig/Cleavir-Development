@@ -350,4 +350,8 @@ Some more thought needs to be given to this.
 - Modify COMPILE-TOPLEVEL and COMPILE-AST to receive a client object as
   their last argument (or as their first argument?).
 - Rewrite the primary method of COMPILE-AST on LOAD-TIME-VALUE ASTs.
-- Update the LOAD-TIME-VALUE related HIR transformations accordingly.
+- The hoisting of load-time-value forms remains an HIR transformation (or
+  MIR?), but has to be modified to take nested LOAD-TIME-VALUE forms into
+  account.  Constant-inputs are ignored at this step.
+- A final pass, right before dumping a FASL, extracts and coalesces all
+

@@ -17,13 +17,14 @@
                  (:module "Graphviz"
                   :components ((:file "utilities")
                                (:file "protocol")
-                               (:file "cleavir")
-                               (:file "cst")
-                               (:file "ast")
-                               (:file "flowchart")
-                               (:file "hir")
-                               (:file "mir")
-                               (:file "lir")
+                               (:module "Graphs"
+                                :components ((:file "cleavir")
+                                             (:file "cst")
+                                             (:file "ast")
+                                             (:file "flowchart")
+                                             (:file "hir")
+                                             (:file "mir")
+                                             (:file "lir")))
                                (:file "visualization")))))))
 
 (defsystem "cleavir-development-examples"

@@ -4,6 +4,35 @@
 ;;;
 ;;; Generic Functions
 
+;;; These first three generic functions compute Graphviz attributes for the
+;;; entire graph, individual nodes, and individual edges, respectively.
+;;; Each method on any of these three generic functions must return a
+;;; property list of valid Graphviz attributes.
+;;;
+;;; The method combination GRAPHVIZ-ATTRIBUTES ensures that if a particular
+;;; key appears in the property lists of several applicable methods, only
+;;; the corresponding value in the property list of the most specific
+;;; applicable method is used.  For example, consider the following
+;;; definition of SOME-GRAPH:
+;;;
+;;; (defclass some-graph (graph) ())
+;;;
+;;; (defmethod graphviz-node-attributes
+;;;     ((graph some-graph) (node t))
+;;;   '(:style :filled
+;;;     :fillcolor :white
+;;;     :shape :box))
+;;;
+;;; In this setup, the following code defines a subclass of SOME-GRAPH,
+;;; where nodes inherit the :STYLE and :SHAPE attribute, but where each
+;;; node is colored red:
+;;;
+;;; (defclass red-graph (some-graph) ())
+;;;
+;;; (defmethod graphviz-node-attributes
+;;;     ((graph red-graph) (node t))
+;;;   '(:fillcolor :red))
+
 (defgeneric graphviz-graph-attributes (graph)
   (:method-combination graphviz-attributes))
 
@@ -13,9 +42,33 @@
 (defgeneric graphviz-edge-attributes (graph edge from to edge-number)
   (:method-combination graphviz-attributes))
 
-;;; The caption and the properties of a node are used to compute its label.
-;;; Each pair of strings in the list of properties is rendered as a
-;;; key-value entry below the caption.
+;;; The caption and properties of a node are used to compute its label.
+;;; The caption of a node must be a string that is printed prominently in
+;;; the first line of the node.  The properties of a node must be an alist,
+;;; whose keys and values are strings. Each alist entry is rendered as a
+;;; row below the caption.  Using APPEND as the method combination for node
+;;; properties allows several applicable methods to contribute to the list
+;;; of properties.
+;;;
+;;; For example, the following code could be used to display hypothetical
+;;; person objects as nodes, using their full name as caption and metadata
+;;; such as age and weight as rows below the caption:
+;;;
+;;; (defmethod graphviz-node-caption
+;;;     ((graph some-graph) (person person))
+;;;   (person-full-name person))
+;;;
+;;; (defmethod graphviz-node-properties
+;;;     ((graph some-graph) (person person))
+;;;   `(("age" . ,(princ-to-string (person-age person)))
+;;;     ("weight" . ,(princ-to-string (person-weight person)))))
+;;;
+;;; Assuming a class FEMALE-PERSON that is a subclass of PERSION, we can
+;;; register the additional information with the following method:
+;;;
+;;; (defmethod graphviz-node-properties
+;;;     ((graph some-graph) (person female-person))
+;;;   `(("gender" . "female")))
 
 (defgeneric graphviz-node-caption (graph node))
 
@@ -25,13 +78,18 @@
 ;;; The edge drawing protocol is somewhat involved, but for a good reason.
 ;;; We want to be able to subclass graphs to add or remove edges or to
 ;;; change the appearance of some edges.  To do so, the protocol works in
-;;; three steps.  In the first step, a generic function is used to
-;;; determine all types of edges that potentially reach a given node.  In
-;;; the second step, the node is queried for incoming and outgoing edges of
-;;; each of these types.  In the third step, the current graph type, edge
-;;; type, start node, target node and the position of the edge in the
-;;; sequence returned from the previous step are used to derive the
-;;; attributes of that edge.
+;;; three steps.
+;;;
+;;; 1. The generic function GRAPHVIZ-POTENTIAL-EDGES is used to determine
+;;;    the set of edge types that potentially reach a node.
+;;;
+;;; 2. The generic functions GRAPHVIZ-OUTGOING-EDGE-TARGETS and
+;;;    GRAPHVIZ-INCOMING-EDGE-ORIGINS are used to query for incoming and
+;;;    outgoing edges of each of the previously determined edge types.
+;;;
+;;; 3. The current graph type, edge type, start node, target node and the
+;;;    position of the edge in the sequence returned from the previous step
+;;;    are used to derive the attributes of that edge.
 
 (defgeneric graphviz-potential-edges (graph node)
   (:method-combination append))
@@ -39,6 +97,11 @@
 (defgeneric graphviz-outgoing-edge-targets (graph edge node))
 
 (defgeneric graphviz-incoming-edge-origins (graph edge node))
+
+;;; The generic function GRAPHVIZ-KNOWN-NODES is necessary to describe
+;;; graphs that are not fully connected.  It returns a list of nodes that
+;;; are related to the current node, even though there is no edge that
+;;; connects them.
 
 (defgeneric graphviz-known-nodes (graph node)
   (:method-combination append))
