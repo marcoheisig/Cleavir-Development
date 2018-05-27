@@ -26,7 +26,7 @@ LOAD-TIME-VALUE forms:
 3. Even if the first argument of a LOAD-TIME-VALUE form does not evaluate
    to a constant, the compiler may be able to derive some knowledge about
    the resulting value, e.g. type information.
-4. A LOAD-TIME-VALUE form may appear in dead code.  If, additionally the
+4. A LOAD-TIME-VALUE form may appear in dead code.  If, additionally, the
    form is free of side-effects, there is no need to store the form in the
    FASL at all.
 5. Several LOAD-TIME-VALUE forms may be nested.  In this case, the standard
@@ -285,73 +285,18 @@ beach  Great!  Again, there might be something I haven't thought of.
 #+END_QUOTE
 
 * A Proposed Solution
-** AST creation
-Instead of storing the first argument of a LOAD-TIME-VALUE form as an
-S-expression, convert it to an AST, too.  One benefit of doing so is that
-syntactic errors are detected earlier.  Another benefit is that it
-simplifies the compiler logic in that the AST conversion is only performed
-once and not at multiple times during a single compilation.
+TODO
 
-** Changing the structure of LOAD-TIME-VALUE-INPUT
-Currently, LOAD-TIME-VALUE-INPUT instances store the source form and the
-read-only boolean.  The new LOAD-TIME-VALUE-INPUT datum should have the
-following reader methods instead:
-1. HANDLE -- A client-supplied object, e.g. an integer denoting the
-   location of the value in the FASL or a thunk.
-2. READ-ONLY-P -- A boolean that is at least as strict as the second
-   argument of the original LOAD-TIME-VALUE form.
+* Miscellaneous Ideas
+** Constantness Inference
+It seems worthwhile to track the knowledge about constantness of objects
+during compilation, e.g., to warn the programmer of accidental mutation.
+This would be an extension of type inference.
 
-** AST to HIR translation
-During AST to HIR translation, each LOAD-TIME-VALUE must be replaced by HIR
-instructions and data.  Each client may want to process LOAD-TIME-VALUE
-differently.  A solution would be to supply a client object to
-CLEAVIR-AST-TO-HIR:COMPILE-TOPLEVEL and all the COMPILE-AST functions.
-
-*Important*: If a client processes a LOAD-TIME-VALUE form with
-side-effects, it needs to keep a reference to this form or dump it
-immediately to a FASL.  Otherwise, the form may be lost when its containing
-code is eliminated by some other compiler transformation.
-
-It seems there is little a compiler framework such as Cleavir can prescribe
-at this step, except that the result of conversion is a datum, possibly
-wrapped in a THE-INSTRUCTION.  Cleavir could however provide a default
-implementation similar to that of SBCL, using CONSTANTP. However, the exact
-nature of this default implementation depends on the way FASLs are handled
-by Cleavir.
-
-** FASL dumping
-The primary question here is whether the FASL should be created as an
-invisible side-effect of the Cleavir compilation or whether we want to
-provide a FASL protocol and make all interaction explicit.  In the former
-case, a client could e.g. bind a special variable around the machinery of
-the file compiler and specialized methods could access this variable.  In
-the latter case, Cleavir would specify a protocol with operations such as
-(MAKE-FASL CLIENT), (ADD-TO-FASL FASL THUNK), (WRITE-FASL FILE).
-
-In either case, there needs to be a final compiler transformation that is
-applied to each reachable CONSTANT-INPUT and either turns it into an
-IMMEDIATE-INPUT or to a reference to a value in the FASL.  Most
-importantly, this mechanism must hoist all compiled thunks of what used to
-be LOAD-TIME-VALUE forms.
-
-** Tracking of run-time constants
-By using LOAD-TIME-VALUE with a second argument of T, it is possible to
-create constant objects at load-time.  Additionally, each compile-time
-constant is also a run-time constant.  It seems worthwhile to track the
-knowledge about such run-time constants during compilation, in order to
-warn the programmer of accidental mutation.  This could be achieved by
-propagating not only the type of a form, but also the run-time
-constantness.  Can we add subtypes to all types of mutable objects,
-e.g. SIMPLE-VECTOR-CONSTANT or CONS-CONSTANT, at least during compilation?
-Some more thought needs to be given to this.
-
-** Summary
-- Replace the %FORM slot of each LOAD-TIME-VALUE-AST by an %AST slot.
-- Modify COMPILE-TOPLEVEL and COMPILE-AST to receive a client object as
-  their last argument (or as their first argument?).
-- Rewrite the primary method of COMPILE-AST on LOAD-TIME-VALUE ASTs.
-- The hoisting of load-time-value forms remains an HIR transformation (or
-  MIR?), but has to be modified to take nested LOAD-TIME-VALUE forms into
-  account.  Constant-inputs are ignored at this step.
-- A final pass, right before dumping a FASL, extracts and coalesces all
-
+** Uniquification of Constants
+Constant objects, i.e., objects whose mutation results in undefined
+behavior, qualify for uniquification.  In the most extreme case, an
+implementation could use hash-consing to ensure that similar immutable
+objects are always identical.  The benefits would be a decreased memory
+footprint and some potential for some optimization, e.g., the
+simplification of an EQUALP test with two constant operands to an EQ test.

@@ -28,11 +28,12 @@
   `(:fillcolor :white))
 
 (defmethod graphviz-edge-attributes
-    ((graph cst) (edge cst-edge) from to edge-number)
-  (let ((label (ecase edge-number
-                 (0 "car")
-                 (1 "cdr"))))
-    `(:label ,label)))
+    ((graph cst) (edge cst-edge) from to (edge-number (eql 0)))
+  `(:label "car"))
+
+(defmethod graphviz-edge-attributes
+    ((graph cst) (edge cst-edge) from to (edge-number (eql 1)))
+  `(:label "cdr"))
 
 (defmethod graphviz-node-caption
     ((graph cst) (node cst:cons-cst))
