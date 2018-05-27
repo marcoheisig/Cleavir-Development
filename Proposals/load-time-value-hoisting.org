@@ -15,8 +15,8 @@ EVAL and COMPILE --- are trivially handled by evaluating the form directly
 in a null lexical environment and replacing its use with the resulting
 value.
 
-Several challenges arise for a compiler writer when dealing with
-LOAD-TIME-VALUE forms:
+LOAD-TIME-VALUE forms have some peculiarities that a compiler writer should
+have in mind:
 1. The value of the LOAD-TIME-VALUE form may be a compile-time constant,
    either because because the first argument is a literal, or because the
    first argument evaluates to a constant in the sense of CONSTANTP.
@@ -39,6 +39,9 @@ LOAD-TIME-VALUE forms:
 7. Several constant LOAD-TIME-VALUE forms that evaluate to the same
    constant datum may be coalesced. Some heuristic must be used to detect
    such equivalent forms, e.g. if they are the same under EQUAL.
+8. According to the Hyperspec, "the order of evaluation [of load-time-value
+   forms] with respect to the evaluation of top level forms in the file is
+   implementation-dependent."
 
 The following examples illustrate these issues:
 #+BEGIN_SRC lisp
@@ -65,7 +68,7 @@ The following examples illustrate these issues:
 ;; Nested LOAD-TIME-VALUE forms.
 (defvar *i* 0)
 (load-time-value
- (loop repeat 2 sum (load-time-value (incf *i*))))
+(loop repeat 2 sum (load-time-value (incf *i*))))
 
 ;; Accidental modification of constant data. Users will appreciate compiler
 ;; warnings for such code.
@@ -75,6 +78,12 @@ The following examples illustrate these issues:
 '(1 2 3)
 (load-time-value '(1 2 3))
 (load-time-value (list 1 2 3) t)
+
+;; Loading the following two functions from a single file that has been
+;; processed by COMPILE-FILE results in implementation-dependent
+;; behavior. The call to BAR at load time might precede its definition.
+(defun bar () 42)
+(defun foo () (load-time-value (bar)))
 #+END_SRC
 
 * Current Practice
@@ -93,18 +102,18 @@ The SBCL implementation of LOAD-TIME-VALUE resides in
 When translating a LOAD-TIME-VALUE form from source code to IR1, SBCL
 performs the following steps:
 1. An approximate type of the run-time value of the LOAD-TIME-VALUE form is
-   derived.  In particular, SBCL extracts type information if the first
-   argument is a call to a function with type declarations, or a THE,
-   TRULY-THE or FUNCTION special form, or if the first argument form is a
-   variable with type declarations, or if it is a form that is CONSTANTP.
+derived.  In particular, SBCL extracts type information if the first
+argument is a call to a function with type declarations, or a THE,
+TRULY-THE or FUNCTION special form, or if the first argument form is a
+variable with type declarations, or if it is a form that is CONSTANTP.
 2. If the approximate type from the previous step is a subtype of CHARACTER
-   or NUMBER, the second argument form of the LOAD-TIME-VALUE form is
-   automatically converted to T.
+or NUMBER, the second argument form of the LOAD-TIME-VALUE form is
+automatically converted to T.
 3. The LOAD-TIME-VALUE form is converted to a lambda function, compiled,
-   and placed in the FASL file, such that it is evaluated at load-time. Its
-   occurrence is replaced with a new special operator %LOAD-TIME-VALUE,
-   that later references the vector of constants of this particular
-   component.
+and placed in the FASL file, such that it is evaluated at load-time. Its
+occurrence is replaced with a new special operator %LOAD-TIME-VALUE,
+that later references the vector of constants of this particular
+component.
 ** CCL
 The CCL implementation of LOAD-TIME-VALUE resides in
 [[https://github.com/Clozure/ccl/blob/master/compiler/nx1.lisp][compiler/nx1.lisp]]. Essentially, CCL replaces each (load-time-value form) it
@@ -117,15 +126,15 @@ intermediate representation (c1form) and pushed to a special variable.
 
 ** Cleavir (as of Q1 2018)
 - The first argument of a LOAD-TIME-VALUE form is not processed further and
-  stored as an S-expression.
+stored as an S-expression.
 - An AST transformation hoists all LOAD-TIME-VALUE forms.  As a result,
-  these forms are never seen by subsequent transformations like HIR
-  transformation and optimization.  The hoisted expressions are later
-  passed as arguments to the current top-level function.  It is not clear
-  how this mechanism works in the case of nested LOAD-TIME-VALUE forms.
+these forms are never seen by subsequent transformations like HIR
+transformation and optimization.  The hoisted expressions are later
+passed as arguments to the current top-level function.  It is not clear
+how this mechanism works in the case of nested LOAD-TIME-VALUE forms.
 - All non-immediate constants are currently converted to LOAD-TIME-VALUE
-  forms.  This has the benefit that they are automatically hoisted during
-  FASL dumping, but prevents many optimizations.
+forms.  This has the benefit that they are automatically hoisted during
+FASL dumping, but prevents many optimizations.
 * Discussion
 ** From the Cleavir documentation (projects.txt):
 #+BEGIN_QUOTE
@@ -285,7 +294,96 @@ beach  Great!  Again, there might be something I haven't thought of.
 #+END_QUOTE
 
 * A Proposed Solution
-TODO
+** Eliminate LOAD-TIME-VALUE handling entirely
+Change CST-TO-AST, such that during COMPILE-FILE, it automatically wraps
+each top level form into the AST equivalent of a LET* binding of all
+occurring LOAD-TIME-VALUE forms.  This way, type inference and optimization
+work automatically.  The LOAD-TIME-VALUE-AST node, the LOAD-TIME-VALUE HIR
+instruction, as well as the TOP-LEVEL-ENTER HIR instruction become
+obsolete.
+
+** New instruction: CONSTANTIZE
+Introduce a CONSTANTIZE instruction to declare that some AST used to be the
+first argument of a LOAD-TIME-VALUE form with a second argument of T.
+
+** New instruction: FASL-ENTER-INSTRUCTION
+Introduce a new compiler phase, where a list of top level HIR statements is
+converted to a single FASL-ENTER-INSTRUCTION, a subclass of
+ENTER-INSTRUCTION. This instruction takes three arguments ---
+COPY-SPECIALIZED-ARRAY, INTERN and FDEFINITION. Non-immediate constants are
+hoisted in this process, possibly resulting in calls to MAKE-LOAD-FORM and
+further compilation.
+
+*** Example:
+The HIR COMPILE-FILE equivalent of
+
+#+BEGIN_SRC lisp
+(defun f () '#1=("x" #1#))
+(defun g () (load-time-value (f)))
+#+END_SRC
+
+is turned into the HIR equivalent of
+
+#+BEGIN_SRC lisp
+(lambda (copy intern fdefinition)
+  (let (;; create constants
+        (c0 (funcall copy "COMMON-LISP"))
+        (c1 (funcall copy "SETF"))
+        (c1 (funcall copy "FDEFINITION"))
+        (c2 (funcall copy "F"))
+        (c3 (funcall copy "G"))
+        (c4 (funcall copy "x"))
+        (c5 (cons nil nil)))
+    ;; initialize constants
+    (rplaca c5 c4)
+    (rplacd c5 c5)
+    ;; First top level form: (defun f () '#1=("x" #1#))
+    (let* (;; Evaluate LOAD-TIME-VALUE forms
+           (ltv0 (funcall intern c1 c0)) ; CL:SETF
+           (ltv1 (funcall intern c2 c0)) ; CL:FDEFINITION
+           (ltv2 (list ltv0 ltv1)) ; '(CL:SETF CL:FDEFINITION)
+           (ltv3 (funcall fdefinition ltv2)); #'(CL:SETF CL:FDEFINITION)
+           (ltv4 (funcall intern c2))) ; F
+      (funcall ltv3 (lambda () c5) ltv4))
+    ;; Second top level form: (defun g () (load-time-value (f)))
+    (let* (;; Evaluate LOAD-TIME-VALUE forms
+           (ltv0 (funcall intern c1 c0)) ; CL:SETF
+           (ltv1 (funcall intern c2 c0)) ; CL:FDEFINITION
+           (ltv2 (list ltv0 ltv1)) ; '(CL:SETF CL:FDEFINITION)
+           (ltv3 (funcall fdefinition ltv2)); #'(CL:SETF CL:FDEFINITION)
+           (ltv4 (funcall intern c3)) ; 'G
+           (ltv5 (funcall intern c2)) ; 'F
+           (ltv6 (funcall ltv5)))
+      (funcall ltv3 (lambda () ltv6) ltv4))))
+#+END_SRC
+
+which can be simplified by further optimization stages to
+
+#+BEGIN_SRC lisp
+(lambda (copy intern fdefinition)
+  (let (;; create constants
+        (c0 (funcall copy "COMMON-LISP"))
+        (c1 (funcall copy "SETF"))
+        (c1 (funcall copy "FDEFINITION"))
+        (c2 (funcall copy "F"))
+        (c3 (funcall copy "G"))
+        (c4 (funcall copy "x"))
+        (c5 (cons nil nil)))
+    ;; initialize constants
+    (rplaca c5 c4)
+    (rplacd c5 c5)
+    (let* ((t0 (funcall intern c1 c0)) ; CL:SETF
+           (t1 (funcall intern c2 c0)) ; CL:FDEFINITION
+           (t2 (list t0 t1)) ; '(CL:SETF CL:FDEFINITION)
+           (t3 (funcall fdefinition t2)) ; #'(CL:SETF CL:FDEFINITION)
+           (t4 (funcall intern c2))) ; 'F
+      ;; First top level form: (defun f () '#1=("x" #1#))
+      (funcall t3 (lambda () c5) t4)
+      ;; Second top level form: (defun g () (load-time-value (f)))
+      (let* ((ltv0 (funcall intern c3)) ; 'G
+             (ltv1 (funcall t4))) ; (funcall 'F)
+        (funcall t3 (lambda () ltv1) ltv0)))))
+#+END_SRC
 
 * Miscellaneous Ideas
 ** Constantness Inference
