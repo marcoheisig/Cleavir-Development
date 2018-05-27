@@ -1,6 +1,6 @@
 #+TITLE: The treatment of LOAD-TIME-VALUE forms in Cleavir
 
-* Introduction
+** Introduction
 The LOAD-TIME-VALUE special form has been added to Common Lisp in 1989 as a
 replacement of the dysfunctional sharpsign comma reader macro.  The history
 and semantics of the form are described in the following sections of the
@@ -86,15 +86,15 @@ The following examples illustrate these issues:
 (defun foo () (load-time-value (bar)))
 #+END_SRC
 
-* Current Practice
+** Current Practice
 It is instructive to see how LOAD-TIME-VALUE forms are handled elsewhere in
 the Common Lisp community.
-** ANSI Test Suite
+*** ANSI Test Suite
 The ANSI test suite contains no dedicated tests for LOAD-TIME-VALUE forms.
 It merely asserts that the corresponding symbol is bound to a special
 operator in the Common Lisp package and that it receives either one or two
 arguments.
-** SBCL
+*** SBCL
 The SBCL implementation of LOAD-TIME-VALUE resides in
 [[https://github.com/sbcl/sbcl/blob/master/src/compiler/ltv.lisp][src/compiler/ltv.lisp]], with some related code in [[https://github.com/sbcl/sbcl/blob/master/src/compiler/dump.lisp][src/compiler/dump.lisp]],
 [[https://github.com/sbcl/sbcl/blob/master/src/compiler/dump.lisp][src/compiler/main.lisp]] and [[https://github.com/sbcl/sbcl/blob/master/src/compiler/generic/genesis.lisp][src/compiler/generic/genesis.lisp]].
@@ -114,17 +114,17 @@ and placed in the FASL file, such that it is evaluated at load-time. Its
 occurrence is replaced with a new special operator %LOAD-TIME-VALUE,
 that later references the vector of constants of this particular
 component.
-** CCL
+*** CCL
 The CCL implementation of LOAD-TIME-VALUE resides in
 [[https://github.com/Clozure/ccl/blob/master/compiler/nx1.lisp][compiler/nx1.lisp]]. Essentially, CCL replaces each (load-time-value form) it
 encounters during COMPILE-FILE by `(#:load-time-eval '(funcall ,(compile
 nil `(lambda () ,form)))).
-** ECL
+*** ECL
 The ECL handling of LOAD-TIME-VALUE happens in [[https://gitlab.com/embeddable-common-lisp/ecl/blob/develop/src/cmp/cmptop.lsp][src/cmp/cmptop.lisp]].  During
 COMPILE-FILE, all occurring LOAD-TIME-VALUE forms are translated to ECL's
 intermediate representation (c1form) and pushed to a special variable.
 
-** Cleavir (as of Q1 2018)
+*** Cleavir (as of Q1 2018)
 - The first argument of a LOAD-TIME-VALUE form is not processed further and
 stored as an S-expression.
 - An AST transformation hoists all LOAD-TIME-VALUE forms.  As a result,
@@ -135,8 +135,8 @@ how this mechanism works in the case of nested LOAD-TIME-VALUE forms.
 - All non-immediate constants are currently converted to LOAD-TIME-VALUE
 forms.  This has the benefit that they are automatically hoisted during
 FASL dumping, but prevents many optimizations.
-* Discussion
-** From the Cleavir documentation (projects.txt):
+** Discussion
+*** From the Cleavir documentation (projects.txt):
 #+BEGIN_QUOTE
 I would like to experiment with doing certain transformations at
 different times.  For example, right now, non-trivial constants are
@@ -148,7 +148,7 @@ must then be a HIR transformation that takes remaining constants and
 turn them into LOAD-TIME-VALUE calls.
 #+END_QUOTE
 
-** From the #clasp IRC, 18.3.2018 12:54
+*** From the #clasp IRC, 18.3.2018 12:54
 #+BEGIN_QUOTE
 heisig Hello beach, do you have a moment to talk about load-time-value forms?
 
@@ -293,8 +293,7 @@ heisig Ok, I think I finally understood the whole problem.
 beach  Great!  Again, there might be something I haven't thought of.
 #+END_QUOTE
 
-* A Proposed Solution
-** Eliminate LOAD-TIME-VALUE handling entirely
+** Proposal 2018-05-27
 Change CST-TO-AST, such that during COMPILE-FILE, it automatically wraps
 each top level form into the AST equivalent of a LET* binding of all
 occurring LOAD-TIME-VALUE forms.  This way, type inference and optimization
@@ -302,11 +301,9 @@ work automatically.  The LOAD-TIME-VALUE-AST node, the LOAD-TIME-VALUE HIR
 instruction, as well as the TOP-LEVEL-ENTER HIR instruction become
 obsolete.
 
-** New instruction: CONSTANTIZE
 Introduce a CONSTANTIZE instruction to declare that some AST used to be the
 first argument of a LOAD-TIME-VALUE form with a second argument of T.
 
-** New instruction: FASL-ENTER-INSTRUCTION
 Introduce a new compiler phase, where a list of top level HIR statements is
 converted to a single FASL-ENTER-INSTRUCTION, a subclass of
 ENTER-INSTRUCTION. This instruction takes three arguments ---
@@ -385,13 +382,13 @@ which can be simplified by further optimization stages to
         (funcall t3 (lambda () ltv1) ltv0)))))
 #+END_SRC
 
-* Miscellaneous Ideas
-** Constantness Inference
+** Miscellaneous Ideas
+*** Constantness Inference
 It seems worthwhile to track the knowledge about constantness of objects
 during compilation, e.g., to warn the programmer of accidental mutation.
 This would be an extension of type inference.
 
-** Uniquification of Constants
+*** Uniquification of Constants
 Constant objects, i.e., objects whose mutation results in undefined
 behavior, qualify for uniquification.  In the most extreme case, an
 implementation could use hash-consing to ensure that similar immutable
