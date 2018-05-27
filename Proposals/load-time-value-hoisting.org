@@ -294,25 +294,26 @@ beach  Great!  Again, there might be something I haven't thought of.
 #+END_QUOTE
 
 ** Proposal 2018-05-27
-Change CST-TO-AST, such that during COMPILE-FILE, it automatically wraps
-each top level form into the AST equivalent of a LET* binding of all
-occurring LOAD-TIME-VALUE forms.  This way, type inference and optimization
-work automatically.  The LOAD-TIME-VALUE-AST node, the LOAD-TIME-VALUE HIR
-instruction, as well as the TOP-LEVEL-ENTER HIR instruction become
+Change cst-to-ast, such that during compile-file, it automatically wraps
+each top level form into the AST equivalent of a let* binding of all
+occurring load-time-value forms.  This way, type inference and optimization
+work automatically.  The load-time-value-ast node, the load-time-value hir
+instruction, as well as the top-level-enter HIR instruction become
 obsolete.
 
-Introduce a CONSTANTIZE instruction to declare that some AST used to be the
-first argument of a LOAD-TIME-VALUE form with a second argument of T.
+Introduce a HIR instruction, CONSTANTIZE, to declare that some AST used to
+be the first argument of a LOAD-TIME-VALUE form with a second argument of
+T.
 
 Introduce a new compiler phase, where a list of top level HIR statements is
-converted to a single FASL-ENTER-INSTRUCTION, a subclass of
-ENTER-INSTRUCTION. This instruction takes three arguments ---
-COPY-SPECIALIZED-ARRAY, INTERN and FDEFINITION. Non-immediate constants are
+converted to a fasl-enter-instruction, a subclass of
+enter-instruction. This instruction takes three arguments ---
+copy-specialized-array, intern and fdefinition. Non-immediate constants are
 hoisted in this process, possibly resulting in calls to MAKE-LOAD-FORM and
 further compilation.
 
 *** Example:
-The HIR COMPILE-FILE equivalent of
+The compile-file HIR equivalent of
 
 #+BEGIN_SRC lisp
 (defun f () '#1=("x" #1#))
@@ -354,7 +355,7 @@ is turned into the HIR equivalent of
       (funcall ltv3 (lambda () ltv6) ltv4))))
 #+END_SRC
 
-which can be simplified by further optimization stages to
+which could be simplified by further optimization stages to
 
 #+BEGIN_SRC lisp
 (lambda (copy intern fdefinition)
